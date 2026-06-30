@@ -1,0 +1,1044 @@
+:root {
+  --accent: #CEDFD9;
+  --brake: #9B6A6C;
+  --surface: #1B1815;
+  --foreground: #EBFCFB;
+  --palette-stone: #5F5449;
+  --palette-rose: #9B6A6C;
+  --palette-taupe: #B09398;
+  --palette-mist: #CEDFD9;
+  --palette-ice: #EBFCFB;
+  --panel-opacity: .88;
+  --canvas-width: 800px;
+  --canvas-height: 600px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  color-scheme: dark;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  color: var(--foreground);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+#overlay {
+  position: relative;
+  width: var(--canvas-width);
+  height: var(--canvas-height);
+  overflow: hidden;
+  transform-origin: top left;
+}
+
+.overlay-element {
+  position: absolute;
+  transform: scale(var(--element-scale, 1));
+  transform-origin: top left;
+}
+
+.overlay-element[hidden] {
+  display: none !important;
+}
+
+.instrument {
+  position: absolute;
+  overflow: visible;
+}
+
+.instrument > header {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  min-width: 148px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 13%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--foreground) 66%, transparent);
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  box-shadow: 0 10px 26px #0005;
+  backdrop-filter: blur(8px);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 9px;
+  letter-spacing: .095em;
+  text-transform: uppercase;
+}
+
+.instrument > header output,
+.instrument > header small {
+  color: var(--foreground);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.instrument > header small {
+  color: color-mix(in srgb, var(--foreground) 42%, transparent);
+  font-size: 8px;
+}
+
+/* Wheel */
+.wheel-instrument {
+  width: 420px;
+  height: 430px;
+}
+
+.steering-gauge {
+  position: absolute;
+  z-index: 12;
+  left: 116px;
+  top: 21px;
+  width: 188px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  filter: drop-shadow(0 14px 18px #0008);
+}
+
+.steering-range {
+  position: absolute;
+  width: 172px;
+  height: 12px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent 0 4%, color-mix(in srgb, var(--accent) 28%, transparent) 4% 6%, transparent 6% 48%, color-mix(in srgb, var(--foreground) 28%, transparent) 48% 52%, transparent 52% 94%, color-mix(in srgb, var(--accent) 28%, transparent) 94% 96%, transparent 96%),
+    color-mix(in srgb, var(--surface) 56%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent),
+    inset 0 -10px 18px #0007;
+}
+
+.steering-center {
+  position: absolute;
+  width: 2px;
+  height: 26px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 70%, transparent);
+}
+
+.steering-indicator {
+  position: absolute;
+  width: 30px;
+  height: 18px;
+  border: 1px solid color-mix(in srgb, var(--accent) 52%, transparent);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--foreground) 78%, transparent), transparent 27%),
+    color-mix(in srgb, var(--accent) 72%, #111);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 42%, transparent),
+    0 9px 14px #0008;
+  transition: transform 52ms cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+
+.wheel-instrument::before {
+  content: "";
+  position: absolute;
+  left: 62px;
+  top: 86px;
+  width: 296px;
+  height: 296px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #0000 57%, #0009 58% 64%, #0000 65%);
+  filter: blur(18px);
+  opacity: .85;
+}
+
+.wheel-instrument::after {
+  content: "";
+  position: absolute;
+  left: 89px;
+  top: 164px;
+  width: 242px;
+  height: 116px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+  border-radius: 24px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--foreground) 15%, var(--surface)), transparent 18% 82%, color-mix(in srgb, var(--foreground) 15%, var(--surface))),
+    color-mix(in srgb, #000 26%, transparent);
+  box-shadow: inset 0 0 28px #0008, 0 22px 36px #0008;
+}
+
+.asset-pack .wheel-instrument::after {
+  display: none;
+}
+
+.wheel {
+  position: absolute;
+  z-index: 5;
+  left: 30px;
+  top: 46px;
+  width: 360px;
+  height: 360px;
+  transform-origin: 50% 50%;
+  transition: transform 52ms cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+  filter: drop-shadow(0 22px 28px #0009);
+}
+
+.wheel svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.wheel-image-stack {
+  display: none;
+  position: absolute;
+  inset: -70px;
+}
+
+.asset-pack .wheel-image-stack {
+  display: block;
+}
+
+.asset-pack .vector-wheel,
+.asset-pack .wheel-key,
+.asset-pack .paddle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.wheel-image,
+.wheel-mask {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: saturate(.78) contrast(1.08) brightness(.92) drop-shadow(0 22px 28px #0009);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.wheel-mask {
+  opacity: 0;
+  transition: opacity 45ms linear;
+  background: transparent !important;
+  border: 0 !important;
+  filter: saturate(.92) contrast(1.12) brightness(1.08);
+  transform: none !important;
+}
+
+.wheel-mask.pressed {
+  opacity: 1;
+}
+
+.wheel-rim-base,
+.wheel-rim-metal,
+.wheel-grip,
+.wheel-grip-stitch {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.wheel-rim-base {
+  stroke: #050505;
+  stroke-width: 30;
+}
+
+.wheel-rim-metal {
+  stroke: color-mix(in srgb, var(--foreground) 38%, var(--palette-stone));
+  stroke-width: 23;
+}
+
+.wheel-grip {
+  stroke: #0b0a09;
+  stroke-width: 18;
+  stroke-dasharray: 148 38 148 38 148 38 148 38;
+}
+
+.wheel-grip-stitch {
+  opacity: .26;
+  stroke: var(--foreground);
+  stroke-width: 1;
+  stroke-dasharray: 2 7;
+}
+
+.wheel-spoke {
+  fill: color-mix(in srgb, var(--foreground) 20%, var(--surface));
+  stroke: color-mix(in srgb, var(--foreground) 20%, transparent);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.spoke-edge {
+  fill: none;
+  stroke: color-mix(in srgb, var(--foreground) 16%, transparent);
+  stroke-width: 1;
+}
+
+.wheel-hub-bezel {
+  fill: color-mix(in srgb, var(--surface) 84%, #000);
+  stroke: color-mix(in srgb, var(--foreground) 34%, transparent);
+  stroke-width: 2;
+}
+
+.wheel-hub {
+  fill: color-mix(in srgb, var(--surface) 92%, #000);
+  stroke: color-mix(in srgb, var(--accent) 55%, transparent);
+  stroke-width: 2;
+}
+
+.wheel-hub-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 70%, transparent);
+  stroke-width: 2;
+}
+
+.wheel-mark,
+.wheel-index {
+  fill: none;
+  stroke: var(--foreground);
+  stroke-linecap: round;
+}
+
+.wheel-mark {
+  stroke-width: 3;
+}
+
+.wheel-index {
+  stroke: var(--accent);
+  stroke-width: 6;
+}
+
+.wheel-key,
+.paddle {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+  background: color-mix(in srgb, var(--surface) 82%, #000);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  transition: color 50ms linear, background 50ms linear, border-color 50ms linear, transform 70ms ease;
+}
+
+.wheel-key {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  box-shadow: 0 4px 8px #0009;
+}
+
+.key-a { right: 69px; top: 191px; }
+.key-b { right: 43px; top: 169px; color: var(--palette-rose); }
+.key-x { right: 95px; top: 169px; color: var(--palette-taupe); }
+.key-y { right: 69px; top: 144px; }
+.key-left { left: 67px; top: 188px; border-radius: 8px; }
+.key-right { left: 99px; top: 188px; border-radius: 8px; }
+
+.paddle {
+  z-index: -1;
+  top: 117px;
+  width: 38px;
+  height: 126px;
+  border-radius: 12px;
+  color: color-mix(in srgb, var(--foreground) 48%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--foreground) 20%, var(--surface)), #0a0908);
+}
+
+.paddle-left { left: -8px; }
+.paddle-right { right: -8px; }
+
+/* Pedals */
+.pedal-instrument {
+  width: 360px;
+  height: 205px;
+}
+
+.pedal-grid {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 360px;
+  height: 205px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  padding: 126px 24px 0;
+  border: 0;
+  background: transparent;
+  filter: drop-shadow(0 20px 28px #0008);
+}
+
+.pedal-image-stack {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 360px;
+  height: 205px;
+  z-index: 1;
+  perspective: 560px;
+  perspective-origin: 50% 78%;
+  pointer-events: none;
+}
+
+.asset-pack .pedal-image-stack {
+  display: block;
+}
+
+.asset-pack .pedal-grid {
+  display: block;
+  padding: 0;
+}
+
+.pedal-base-image {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  width: 360px;
+  height: auto;
+  filter: saturate(.72) contrast(1.08) brightness(.9) drop-shadow(0 18px 24px #0008);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.pedal-image {
+  position: absolute;
+  z-index: 3;
+  width: 63px;
+  height: auto;
+  filter: saturate(.76) contrast(1.08) brightness(.94) drop-shadow(0 10px 12px #0009);
+  transform: translateY(0);
+  transform-origin: 50% 92%;
+  transition: transform 58ms cubic-bezier(.16, .86, .2, 1);
+  will-change: transform;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.pedal-image-clutch {
+  left: 35px;
+  top: 38px;
+}
+
+.pedal-image-brake {
+  left: 141px;
+  top: 40px;
+}
+
+.pedal-image-throttle {
+  left: 262px;
+  top: 26px;
+}
+
+.pedal-channel {
+  position: relative;
+  z-index: 4;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 9px;
+}
+
+.asset-pack .pedal-channel {
+  position: absolute;
+  width: 12px;
+  height: 94px;
+  display: block;
+  pointer-events: none;
+}
+
+.asset-pack .pedal-channel.clutch {
+  left: 101px;
+  top: 49px;
+}
+
+.asset-pack .pedal-channel.brake {
+  left: 211px;
+  top: 49px;
+}
+
+.asset-pack .pedal-channel.throttle {
+  left: 330px;
+  top: 39px;
+}
+
+.pedal-mechanism {
+  --pedal-arm-angle: 0deg;
+  --pedal-face-angle: 0deg;
+  --pedal-face-travel: 0px;
+  position: relative;
+  min-height: 106px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, transparent 47%, color-mix(in srgb, var(--foreground) 8%, transparent) 48% 52%, transparent 53%),
+    color-mix(in srgb, #000 24%, transparent);
+}
+
+.asset-pack .pedal-mechanism {
+  min-height: 90px;
+  height: 90px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.asset-pack .pedal-arm,
+.asset-pack .pedal-face,
+.asset-pack .pedal-pivot {
+  opacity: 0;
+}
+
+.pedal-track {
+  position: absolute;
+  right: 50%;
+  bottom: 4px;
+  width: 13px;
+  height: 88px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: color-mix(in srgb, #000 44%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--foreground) 13%, transparent),
+    0 10px 18px #0007;
+  transform: translateX(50%);
+}
+
+.pedal-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: scaleY(var(--pedal-level, 0));
+  transform-origin: bottom;
+  transition: transform 72ms cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+  box-shadow: 0 -8px 16px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.asset-pack .pedal-track {
+  left: 0;
+  right: auto;
+  bottom: 0;
+  width: 10px;
+  height: 92px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 32%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--foreground) 16%, transparent), transparent),
+    color-mix(in srgb, #000 46%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 18%, transparent),
+    inset 0 -18px 22px #0007,
+    0 10px 18px #0008;
+  transform: none;
+}
+
+.asset-pack .pedal-fill {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--foreground) 38%, transparent), transparent 30%),
+    var(--accent);
+  transform: scaleY(var(--pedal-level, 0));
+  transform-origin: bottom center;
+  box-shadow:
+    0 -8px 16px color-mix(in srgb, var(--accent) 38%, transparent),
+    0 0 12px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.brake .pedal-fill {
+  background: var(--brake);
+}
+
+.asset-pack .brake .pedal-fill {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--foreground) 34%, transparent), transparent 30%),
+    var(--brake);
+  box-shadow:
+    0 -8px 16px color-mix(in srgb, var(--brake) 42%, transparent),
+    0 0 12px color-mix(in srgb, var(--brake) 28%, transparent);
+}
+
+.pedal-arm {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  width: 7px;
+  height: 76px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--foreground) 28%, var(--palette-stone));
+  transform: translateX(-50%) rotate(var(--pedal-arm-angle));
+  transform-origin: 50% 100%;
+  transition: transform 72ms cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+
+.pedal-face {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 6px);
+  grid-auto-rows: 6px;
+  place-content: center;
+  gap: 8px 10px;
+  width: 48px;
+  height: 58px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 28%, transparent);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--foreground) 26%, var(--surface)), color-mix(in srgb, var(--surface) 86%, #000));
+  box-shadow: 0 12px 14px #0008;
+  transform:
+    translateX(-50%)
+    translateY(var(--pedal-face-travel))
+    rotateX(var(--pedal-face-angle));
+  transform-origin: bottom;
+  transition: transform 72ms cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+
+.pedal-face i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #050505;
+}
+
+.pedal-pivot {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 15px;
+  height: 15px;
+  border: 3px solid color-mix(in srgb, var(--foreground) 22%, var(--surface));
+  border-radius: 50%;
+  background: #050505;
+  translate: -50%;
+}
+
+.pedal-meta {
+  min-width: 0;
+  position: relative;
+  z-index: 5;
+  text-align: center;
+}
+
+.asset-pack .pedal-meta {
+  display: none;
+}
+
+.pedal-meta b {
+  display: block;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--foreground) 62%, transparent);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.pedal-meta output {
+  display: block;
+  margin-top: 2px;
+  color: var(--foreground);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Shifter */
+.gear-instrument {
+  width: 220px;
+  height: 250px;
+}
+
+.gear-body {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 220px;
+  height: 210px;
+  display: grid;
+  grid-template-columns: 150px 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 8px 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.shift-gate {
+  position: relative;
+  width: 148px;
+  height: 174px;
+}
+
+.shifter-image-stack {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.asset-pack .shifter-image-stack {
+  display: block;
+}
+
+.asset-pack .gate-plate,
+.asset-pack .shift-gate > i,
+.asset-pack .shift-stick {
+  opacity: 0;
+}
+
+.shifter-base-image {
+  position: absolute;
+  left: 2px;
+  top: 20px;
+  width: 146px;
+  height: auto;
+  opacity: .9;
+  filter: saturate(.72) contrast(1.12) brightness(.9) drop-shadow(0 18px 24px #0008);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.shifter-image {
+  position: absolute;
+  left: 76px;
+  top: 96px;
+  width: 78px;
+  height: auto;
+  filter: saturate(.8) contrast(1.08) brightness(.96) drop-shadow(0 12px 14px #0009);
+  transform: translate(-50%, -50%);
+  transition: transform 115ms cubic-bezier(.16, .9, .24, 1);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.gate-plate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.plate-edge {
+  fill: color-mix(in srgb, #000 22%, transparent);
+  stroke: color-mix(in srgb, var(--foreground) 16%, transparent);
+  stroke-width: 1;
+}
+
+.gate-slot {
+  fill: none;
+  stroke: #030303;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gate-highlight {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 30%, transparent);
+  stroke-width: 1.5;
+}
+
+.gate-fastener {
+  fill: color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+.shift-gate i {
+  position: absolute;
+  z-index: 2;
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 800;
+  text-shadow: 0 2px 5px #000, 0 0 10px #000;
+}
+
+.g1 { left: 24px; top: 13px; }
+.g2 { left: 24px; bottom: 12px; }
+.g3 { left: 50%; top: 13px; translate: -50%; }
+.g4 { left: 50%; bottom: 12px; translate: -50%; }
+.g5 { right: 24px; top: 13px; }
+.g6 { right: 13px; bottom: 12px; }
+
+.shift-stick {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 50%;
+  width: 28px;
+  height: 44px;
+  translate: -50% -50%;
+  transform: translate(var(--shift-x, 0), var(--shift-y, 0)) rotate(var(--shift-lean, 0deg));
+  transform-origin: 50% 100%;
+  transition: transform 115ms cubic-bezier(.16, .9, .24, 1);
+  will-change: transform;
+}
+
+.shift-stem {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 6px;
+  height: 34px;
+  border-radius: 99px;
+  background: var(--foreground);
+  translate: -50%;
+}
+
+.shift-knob {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 34%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface) 86%, #000);
+  box-shadow: 0 10px 16px #0009;
+  translate: -50%;
+}
+
+.shift-knob i {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.gear-value {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 68px;
+  color: var(--foreground);
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 50%),
+    color-mix(in srgb, #000 64%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent),
+    0 16px 24px #0009;
+  font-family: Bahnschrift, "Arial Narrow", sans-serif;
+  font-size: 34px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Handbrake */
+.handbrake-instrument {
+  width: 150px;
+  height: 210px;
+}
+
+.handbrake-body {
+  position: absolute;
+  top: 34px;
+  width: 150px;
+  height: 176px;
+  display: grid;
+  place-items: center;
+}
+
+.handbrake-base {
+  position: relative;
+  width: 94px;
+  height: 138px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+  box-shadow: inset 0 0 24px #0008, 0 18px 28px #0007;
+}
+
+.handbrake-slot {
+  position: absolute;
+  left: 50%;
+  bottom: 21px;
+  width: 13px;
+  height: 93px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  translate: -50%;
+}
+
+.handbrake-slot i {
+  position: absolute;
+  inset: auto 2px 2px;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(var(--palette-taupe), var(--palette-rose));
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 72ms cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+
+.handbrake-pivot {
+  position: absolute;
+  left: 50%;
+  bottom: 23px;
+  width: 25px;
+  height: 25px;
+  border: 4px solid color-mix(in srgb, var(--foreground) 18%, var(--surface));
+  border-radius: 50%;
+  background: #050505;
+  translate: -50%;
+}
+
+.handbrake-lever {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  width: 28px;
+  height: 104px;
+  translate: -50%;
+  transform: rotate(var(--handbrake-angle, -14deg));
+  transform-origin: 50% 92%;
+  transition: transform 82ms cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+
+.lever-arm {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 7px;
+  height: 80px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--foreground) 32%, var(--palette-stone));
+  translate: -50%;
+}
+
+.lever-grip {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 27px;
+  height: 38px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--foreground) 18%, var(--surface));
+  translate: -50%;
+}
+
+/* Buttons */
+.input-strip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 470px;
+  height: 44px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 13%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  box-shadow: 0 12px 26px #0006;
+  backdrop-filter: blur(8px);
+}
+
+.strip-label {
+  margin-right: auto;
+  color: color-mix(in srgb, var(--foreground) 48%, transparent);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 8px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: color-mix(in srgb, var(--foreground) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, #000 22%, transparent);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  transition: color 50ms linear, background 50ms linear, border-color 50ms linear, transform 70ms ease;
+}
+
+.button.wide {
+  border-radius: 7px;
+}
+
+:is(.wheel-key, .paddle, .button).pressed {
+  color: #081117 !important;
+  border-color: var(--accent) !important;
+  background: var(--accent) !important;
+  transform: translateY(-1px);
+}
+
+#connection-state {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: 16px;
+  transform: translate3d(-50%, 8px, 0);
+  padding: 7px 11px;
+  color: #fff;
+  border: 1px solid color-mix(in srgb, var(--brake) 65%, #fff);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brake) 80%, #151515);
+  opacity: 0;
+  transition: opacity 140ms ease, transform 140ms ease;
+  font-size: 10px;
+}
+
+#connection-state.visible {
+  transform: translate3d(-50%, 0, 0);
+  opacity: 1;
+}
+
+#overlay.disconnected .overlay-element {
+  opacity: .82;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

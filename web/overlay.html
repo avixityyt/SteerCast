@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#12100e" />
+    <title>SteerCast Overlay</title>
+  </head>
+  <body data-profile="__PROFILE_ID__">
+    <main id="overlay" aria-label="Steering wheel input overlay">
+      <section id="wheel-panel" class="overlay-element instrument wheel-instrument">
+        <output id="steering-value" class="visually-hidden" aria-label="Steering angle">0 degrees</output>
+        <div class="steering-gauge" aria-hidden="true">
+          <span class="steering-range"></span>
+          <span class="steering-center"></span>
+          <span id="steering-indicator" class="steering-indicator"></span>
+        </div>
+        <div id="wheel" class="wheel" aria-label="Steering wheel">
+          <div id="wheel-image-stack" class="wheel-image-stack" aria-hidden="true">
+            <img id="wheel-image" class="wheel-image" alt="" src="/assets/g920/wheel.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="0" data-button-name="A" alt="" src="/assets/g920/A.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="1" data-button-name="B" alt="" src="/assets/g920/B.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="2" data-button-name="X" alt="" src="/assets/g920/X.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="3" data-button-name="Y" alt="" src="/assets/g920/Y.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="4" data-button-name="LB" alt="" src="/assets/g920/LB.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="5" data-button-name="RB" alt="" src="/assets/g920/RB.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="8" data-button-name="Back" alt="" src="/assets/g920/Back.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="9" data-button-name="Start" alt="" src="/assets/g920/Start.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="10" data-button-name="LSB" alt="" src="/assets/g920/LSB.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="11" data-button-name="RSB" alt="" src="/assets/g920/RSB.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="12" data-button-name="DUp" alt="" src="/assets/g920/DUp.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="13" data-button-name="DDown" alt="" src="/assets/g920/DDown.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="14" data-button-name="DLeft" alt="" src="/assets/g920/DLeft.png" width="512" height="512" />
+            <img class="wheel-mask" data-bit="15" data-button-name="DRight" alt="" src="/assets/g920/DRight.png" width="512" height="512" />
+          </div>
+          <svg class="vector-wheel" viewBox="0 0 240 240" role="img" aria-label="Three-spoke racing wheel">
+            <defs>
+              <linearGradient id="rim-metal" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#EBFCFB" />
+                <stop offset="1" stop-color="#5F5449" />
+              </linearGradient>
+              <linearGradient id="spoke-metal" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#CEDFD9" />
+                <stop offset="1" stop-color="#5F5449" />
+              </linearGradient>
+              <radialGradient id="hub-metal" cx=".5" cy=".5">
+                <stop offset="0" stop-color="#CEDFD9" />
+                <stop offset="1" stop-color="#1B1815" />
+              </radialGradient>
+            </defs>
+            <circle class="wheel-rim-base" cx="120" cy="120" r="96" />
+            <circle class="wheel-rim-metal" cx="120" cy="120" r="96" />
+            <circle class="wheel-grip" cx="120" cy="120" r="96" />
+            <circle class="wheel-grip-stitch" cx="120" cy="120" r="88" />
+            <path class="wheel-spoke spoke-left" d="M103 111 48 78 62 63l55 41z" />
+            <path class="wheel-spoke spoke-right" d="m137 111 55-33-14-15-55 41z" />
+            <path class="wheel-spoke spoke-lower" d="m109 132-5 65h32l-5-65z" />
+            <path class="spoke-edge" d="m111 136-3 56M129 136l3 56M99 110 55 79M141 110l44-31" />
+            <circle class="wheel-hub-bezel" cx="120" cy="120" r="34" />
+            <circle class="wheel-hub" cx="120" cy="120" r="25" />
+            <circle class="wheel-hub-ring" cx="120" cy="120" r="17" />
+            <path class="wheel-mark" d="M112 124h16M116 116h8" />
+            <path class="wheel-index" d="M120 24v20" />
+          </svg>
+          <span class="wheel-key key-a" data-bit="0">A</span>
+          <span class="wheel-key key-b" data-bit="1">B</span>
+          <span class="wheel-key key-x" data-bit="2">X</span>
+          <span class="wheel-key key-y" data-bit="3">Y</span>
+          <span class="wheel-key key-left" data-bit="14">&lt;</span>
+          <span class="wheel-key key-right" data-bit="15">&gt;</span>
+          <span class="paddle paddle-left" data-bit="4" aria-label="Left paddle">&minus;</span>
+          <span class="paddle paddle-right" data-bit="5" aria-label="Right paddle">+</span>
+        </div>
+      </section>
+
+      <section id="pedals-panel" class="overlay-element instrument pedal-instrument">
+        <div class="pedal-grid">
+          <div id="pedal-image-stack" class="pedal-image-stack" aria-hidden="true">
+            <img id="pedal-image-clutch" class="pedal-image pedal-image-clutch" alt="" src="/assets/g920/clutch.png" width="113" height="212" />
+            <img id="pedal-image-brake" class="pedal-image pedal-image-brake" alt="" src="/assets/g920/brake.png" width="113" height="212" />
+            <img id="pedal-image-throttle" class="pedal-image pedal-image-throttle" alt="" src="/assets/g920/gas.png" width="113" height="212" />
+            <img id="pedal-base-image" class="pedal-base-image" alt="" src="/assets/g920/pedals.png" width="618" height="343" />
+          </div>
+          <div class="pedal-channel clutch">
+            <div class="pedal-mechanism">
+              <div class="pedal-track"><span class="pedal-fill"></span></div>
+              <span class="pedal-arm"></span>
+              <span class="pedal-face" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="pedal-pivot"></span>
+            </div>
+            <div class="pedal-meta"><b>Clutch</b><output class="visually-hidden">0%</output></div>
+          </div>
+          <div class="pedal-channel brake">
+            <div class="pedal-mechanism">
+              <div class="pedal-track"><span class="pedal-fill"></span></div>
+              <span class="pedal-arm"></span>
+              <span class="pedal-face" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="pedal-pivot"></span>
+            </div>
+            <div class="pedal-meta"><b>Brake</b><output class="visually-hidden">0%</output></div>
+          </div>
+          <div class="pedal-channel throttle">
+            <div class="pedal-mechanism">
+              <div class="pedal-track"><span class="pedal-fill"></span></div>
+              <span class="pedal-arm"></span>
+              <span class="pedal-face" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="pedal-pivot"></span>
+            </div>
+            <div class="pedal-meta"><b>Throttle</b><output class="visually-hidden">0%</output></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="gear-panel" class="overlay-element instrument gear-instrument">
+        <div class="gear-body">
+          <div class="shift-gate">
+            <div id="shifter-image-stack" class="shifter-image-stack" aria-hidden="true">
+              <img id="shifter-base-image" class="shifter-base-image" alt="" src="/assets/g920/shifter-base.png" width="486" height="486" />
+              <img id="shifter-image" class="shifter-image" alt="" src="/assets/g920/shifter.png" width="486" height="486" />
+            </div>
+            <svg class="gate-plate" viewBox="0 0 90 112" aria-hidden="true">
+              <rect class="plate-edge" x="2" y="2" width="86" height="108" rx="10" />
+              <path class="gate-slot" d="M18 19v74M45 19v74M72 19v74M18 44h54M18 68h54" />
+              <path class="gate-highlight" d="M19 18v74M46 18v74M19 43h52" />
+              <circle class="gate-fastener" cx="11" cy="11" r="2" />
+              <circle class="gate-fastener" cx="79" cy="11" r="2" />
+              <circle class="gate-fastener" cx="11" cy="101" r="2" />
+              <circle class="gate-fastener" cx="79" cy="101" r="2" />
+            </svg>
+            <i class="g1">1</i><i class="g2">2</i>
+            <i class="g3">3</i><i class="g4">4</i>
+            <i class="g5">5</i><i class="g6">6/R</i>
+            <span id="shift-stick" class="shift-stick" aria-label="Gear lever">
+              <span class="shift-stem"></span>
+              <span class="shift-knob"><i></i></span>
+            </span>
+          </div>
+          <output id="gear" class="gear-value">N</output>
+        </div>
+      </section>
+
+      <section id="handbrake-panel" class="overlay-element instrument handbrake-instrument">
+        <header><span>Handbrake</span><output id="handbrake-value">0%</output></header>
+        <div class="handbrake-body">
+          <div class="handbrake-base">
+            <span class="handbrake-slot"><i id="handbrake-fill"></i></span>
+            <span class="handbrake-pivot"></span>
+            <span id="handbrake-lever" class="handbrake-lever">
+              <i class="lever-arm"></i>
+              <i class="lever-grip"></i>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section id="buttons-panel" class="overlay-element input-strip" aria-label="Wheel buttons">
+        <span class="strip-label">Buttons</span>
+        <span class="button" data-bit="0">A</span>
+        <span class="button" data-bit="1">B</span>
+        <span class="button" data-bit="2">X</span>
+        <span class="button" data-bit="3">Y</span>
+        <span class="button wide" data-bit="4">LB</span>
+        <span class="button wide" data-bit="5">RB</span>
+        <span class="button" data-bit="8">Back</span>
+        <span class="button" data-bit="9">Start</span>
+        <span class="button" data-bit="12">↑</span>
+        <span class="button" data-bit="13">↓</span>
+        <span class="button" data-bit="14">←</span>
+        <span class="button" data-bit="15">→</span>
+      </section>
+
+      <div id="connection-state">Wheel disconnected</div>
+    </main>
+    <script type="module" src="/src/overlay/overlay.ts"></script>
+  </body>
+</html>

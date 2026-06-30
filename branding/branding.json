@@ -1,0 +1,7 @@
+{
+  "name": "SteerCast",
+  "tagline": "Wheel input for OBS",
+  "logo": "app-logo.png",
+  "animatedLogo": "app-logo.gif",
+  "icon": "app-icon.ico"
+}

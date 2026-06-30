@@ -1,0 +1,13 @@
+.dotnet/
+.vs/
+.vscode/
+bin/
+obj/
+node_modules/
+dist/
+artifacts/
+*.user
+*.suo
+TestResults/
+test-results/
+web/test-results/
