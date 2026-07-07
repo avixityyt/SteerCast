@@ -49,7 +49,7 @@ Useful maintenance commands:
 
 ```powershell
 .\scripts\clean.ps1
-.\scripts\publish-release.ps1 -SkipShareX
+.\scripts\publish-release.ps1
 ```
 
 ## How it works

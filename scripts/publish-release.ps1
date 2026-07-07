@@ -1,11 +1,6 @@
 param(
     [string] $Version,
     [string] $GitHubRepo = "avixityyt/SteerCast",
-    [string] $ShareXPath,
-    [string] $ShareXTask,
-    [ValidateSet("Installer", "All")]
-    [string] $ShareXFiles = "Installer",
-    [switch] $SkipShareX,
     [switch] $SkipGitHub,
     [switch] $Draft,
     [switch] $Prerelease,
@@ -29,54 +24,10 @@ function Get-SteerCastVersion {
     return $detected
 }
 
-function Find-ShareX {
-    if (-not [string]::IsNullOrWhiteSpace($ShareXPath)) {
-        if (-not (Test-Path -LiteralPath $ShareXPath)) {
-            throw "ShareX was not found at: $ShareXPath"
-        }
-        return $ShareXPath
-    }
-
-    $command = Get-Command ShareX -ErrorAction SilentlyContinue
-    if ($command) {
-        return $command.Source
-    }
-
-    @(
-        (Join-Path $env:ProgramFiles "ShareX\ShareX.exe"),
-        (Join-Path ${env:ProgramFiles(x86)} "ShareX\ShareX.exe"),
-        (Join-Path $env:LOCALAPPDATA "Programs\ShareX\ShareX.exe"),
-        (Join-Path $env:LOCALAPPDATA "ShareX\ShareX.exe")
-    ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
-}
-
 function Assert-CleanGitTree {
     $dirty = & git -C $root status --porcelain --untracked-files=no
     if ($dirty -and -not $AllowDirty) {
         throw "Tracked files are dirty. Commit/stash first, or pass -AllowDirty."
-    }
-}
-
-function Publish-ToShareX([string] $shareX, [System.IO.FileInfo[]] $files, [string] $version) {
-    $before = try { Get-Clipboard -Raw } catch { "" }
-    foreach ($file in $files) {
-        Write-Host "Uploading with ShareX: $($file.Name)"
-        $arguments = @($file.FullName, "-autoclose")
-        if (-not [string]::IsNullOrWhiteSpace($ShareXTask)) {
-            $arguments += @("-task", $ShareXTask)
-        }
-        Start-Process -FilePath $shareX -ArgumentList $arguments -Wait
-    }
-
-    Start-Sleep -Milliseconds 500
-    $after = try { Get-Clipboard -Raw } catch { "" }
-    if ($after -and $after -ne $before) {
-        $log = Join-Path $root "artifacts\sharex-upload-$version.txt"
-        Set-Content -LiteralPath $log -Value $after -Encoding utf8
-        Write-Host "ShareX clipboard result saved to $log"
-    }
-    else {
-        Write-Warning "ShareX finished, but no new clipboard URL was detected."
     }
 }
 
@@ -124,17 +75,6 @@ $artifacts = Join-Path $root "artifacts"
 $installer = Get-Item (Join-Path $artifacts "SteerCast-$resolvedVersion-Setup.exe")
 $portable = Get-Item (Join-Path $artifacts "SteerCast-$resolvedVersion-win-x64.zip")
 $releaseFiles = @($installer, $portable)
-
-if (-not $SkipShareX) {
-    $shareX = Find-ShareX
-    if ($shareX) {
-        $shareXUploadFiles = if ($ShareXFiles -eq "All") { $releaseFiles } else { @($installer) }
-        Publish-ToShareX -shareX $shareX -files $shareXUploadFiles -version $resolvedVersion
-    }
-    else {
-        Write-Warning "ShareX was not found. Pass -ShareXPath or use -SkipShareX."
-    }
-}
 
 if (-not $SkipGitHub) {
     Publish-ToGitHub -version $resolvedVersion -files $releaseFiles
