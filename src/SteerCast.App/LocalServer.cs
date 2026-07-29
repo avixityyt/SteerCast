@@ -135,6 +135,15 @@ public sealed class LocalServer(
             return;
         }
 
+        if (method == "GET" && path == "/api/integrations/logitech")
+        {
+            var status = inputSource is IForceFeedbackStatusSource source
+                ? source.ForceFeedbackStatus
+                : new ForceFeedbackReading(null, null, "none", false, "Optional telemetry adapter is not installed.");
+            await SendJsonAsync(context, status, AppJsonContext.Default.ForceFeedbackReading, 200, cancellationToken);
+            return;
+        }
+
         if (method == "POST" && path == "/api/devices/refresh")
         {
             inputSource.Refresh();

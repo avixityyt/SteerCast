@@ -19,7 +19,7 @@ internal static class Program
         Application.SetCompatibleTextRenderingDefault(false);
 
         var profileStore = new ProfileStore();
-        var inputSource = new WindowsWheelInputSource();
+        using var inputSource = new WindowsWheelInputSource();
         await using var broadcaster = new InputBroadcaster(inputSource, profileStore);
         await using var server = new LocalServer(Port, profileStore, inputSource, broadcaster);
         server.Start();
@@ -45,6 +45,7 @@ internal static class Program
 [JsonSerializable(typeof(OverlayProfile[]))]
 [JsonSerializable(typeof(DeviceDescriptor[]))]
 [JsonSerializable(typeof(RawDeviceReading))]
+[JsonSerializable(typeof(ForceFeedbackReading))]
 [JsonSerializable(typeof(CalibrationRequest))]
 [JsonSerializable(typeof(AxisCalibration))]
 [JsonSerializable(typeof(HealthResponse))]

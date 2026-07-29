@@ -5,14 +5,16 @@ using Windows.Gaming.Input;
 
 namespace SteerCast.App.Services;
 
-public sealed class WindowsWheelInputSource : IWheelInputSource
+public sealed class WindowsWheelInputSource : IWheelInputSource, IForceFeedbackStatusSource, IDisposable
 {
+    private readonly IForceFeedbackAdapter _forceFeedback;
     private readonly object _sync = new();
     private readonly ConcurrentDictionary<string, RawState> _rawStates = new(StringComparer.Ordinal);
     private DeviceEntry[] _devices = [];
 
-    public WindowsWheelInputSource()
+    public WindowsWheelInputSource(IForceFeedbackAdapter? forceFeedback = null)
     {
+        _forceFeedback = forceFeedback ?? new NullForceFeedbackAdapter();
         Refresh();
         RawGameController.RawGameControllerAdded += (_, _) => Refresh();
         RawGameController.RawGameControllerRemoved += (_, _) => Refresh();
@@ -121,7 +123,8 @@ public sealed class WindowsWheelInputSource : IWheelInputSource
             var frame = entry.Wheel is not null
                 ? ReadRacingWheel(entry, profile, sequence)
                 : ReadRawController(entry, profile, sequence);
-            return ApplyHandbrakeOverride(frame, profile, handbrakeEntry, entry.Descriptor.Id);
+            frame = ApplyHandbrakeOverride(frame, profile, handbrakeEntry, entry.Descriptor.Id);
+            return ApplyForceFeedback(frame, entry.Descriptor.Id);
         }
         catch (Exception exception) when (exception is InvalidOperationException or ObjectDisposedException)
         {
@@ -129,6 +132,23 @@ public sealed class WindowsWheelInputSource : IWheelInputSource
             return Disconnected(entry.Descriptor.Id, sequence);
         }
     }
+
+    private InputFrame ApplyForceFeedback(InputFrame frame, string deviceId)
+    {
+        var telemetry = _forceFeedback.Read(deviceId);
+        return telemetry is null
+            ? frame
+            : frame with
+            {
+                Force = telemetry.Force,
+                Torque = telemetry.Torque,
+                ForceFeedbackSource = telemetry.Source
+            };
+    }
+
+    public ForceFeedbackReading ForceFeedbackStatus => _forceFeedback.Status;
+
+    public void Dispose() => _forceFeedback.Dispose();
 
     private static InputFrame ReadRacingWheel(DeviceEntry entry, OverlayProfile profile, long sequence)
     {

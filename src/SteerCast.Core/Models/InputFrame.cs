@@ -13,4 +13,7 @@ public sealed record InputFrame
     public double Handbrake { get; init; }
     public int Gear { get; init; }
     public ulong Buttons { get; init; }
+    public double? Force { get; init; }
+    public double? Torque { get; init; }
+    public string? ForceFeedbackSource { get; init; }
 }
