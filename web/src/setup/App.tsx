@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import type { DeviceDescriptor, OverlayElement, OverlayProfile, RawDeviceReading } from "../shared/types";
+import type { DeviceDescriptor, ForceFeedbackStatus, HealthResponse, OverlayElement, OverlayProfile, RawDeviceReading } from "../shared/types";
 import {
   axisRows,
   elementNames,
@@ -26,6 +26,8 @@ export default function App() {
   const [profile, setProfile] = useState<OverlayProfile | null>(null);
   const [panel, setPanel] = useState<PanelName>("device");
   const [status, setStatus] = useState("Loading");
+  const [appVersion, setAppVersion] = useState("dev");
+  const [ffbStatus, setFfbStatus] = useState<ForceFeedbackStatus | null>(null);
   const [dragging, setDragging] = useState<DragState | null>(null);
   const [calibrating, setCalibrating] = useState<string | null>(null);
   const [showLaunchSplash, setShowLaunchSplash] = useState(() => new URLSearchParams(location.search).has("launch"));
@@ -39,6 +41,10 @@ export default function App() {
   useEffect(() => {
     void initialize();
   }, []);
+
+  useEffect(() => {
+    document.title = `SteerCast v${appVersion} · Setup`;
+  }, [appVersion]);
 
   useEffect(() => {
     if (!showLaunchSplash) return;
@@ -63,10 +69,23 @@ export default function App() {
 
   async function initialize() {
     try {
-      await Promise.all([loadProfiles(), loadDevices()]);
+      await Promise.all([loadProfiles(), loadDevices(), loadHealth(), loadFfbStatus()]);
     } catch {
       setStatus("SteerCast could not load its local settings. Restart the app.");
     }
+  }
+
+  async function loadHealth() {
+    const response = await fetch("/api/health", { cache: "no-store" });
+    if (!response.ok) throw new Error("Could not load app health");
+    const health: HealthResponse = await response.json();
+    setAppVersion(health.version.replace(/\.0$/, ""));
+  }
+
+  async function loadFfbStatus() {
+    const response = await fetch("/api/integrations/logitech", { cache: "no-store" });
+    if (!response.ok) return;
+    setFfbStatus(await response.json());
   }
 
   function postPreview(value: OverlayProfile) {
@@ -310,7 +329,7 @@ export default function App() {
           <div class="launch-logo" aria-hidden="true">
             <img src="/brand/app-logo.gif" alt="" />
           </div>
-          <p>SteerCast</p>
+          <p>SteerCast <span class="brand-version">v{appVersion}</span></p>
           <small>Starting local overlay server</small>
         </div>
       )}
@@ -318,7 +337,7 @@ export default function App() {
         <div class="brand">
           <img class="brand-mark" src="/brand/app-logo.png" alt="" aria-hidden="true" />
           <div>
-            <h1>SteerCast</h1>
+            <h1>SteerCast <span class="brand-version">v{appVersion}</span></h1>
             <p>Wheel input for OBS</p>
           </div>
         </div>
@@ -461,6 +480,22 @@ export default function App() {
                   <span>degrees</span>
                 </div>
               </Field>
+              <section class={`ffb-card ${ffbStatus?.available ? "available" : "unavailable"}`} aria-labelledby="ffb-title">
+                <div class="module-title">
+                  <span class="ffb-indicator" aria-hidden="true"></span>
+                  <strong id="ffb-title">Force feedback telemetry</strong>
+                  <span class="ffb-badge">Optional</span>
+                </div>
+                <p>
+                  {ffbStatus?.available
+                    ? "Reported wheel force and torque can be sent to the OBS overlay."
+                    : "Not connected. SteerCast still reads your wheel normally."}
+                </p>
+                <div class="ffb-status-line">
+                  <span>{ffbStatus?.available ? "Available" : "Unavailable"}</span>
+                  <small>{ffbStatus?.status ?? "Optional Logitech adapter not installed."}</small>
+                </div>
+              </section>
               <details class="advanced">
                 <summary>Manual input mapping</summary>
                 <p>Only use this when automatic Logitech detection does not map an input correctly.</p>

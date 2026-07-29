@@ -92,3 +92,18 @@ export type RawDeviceReading = {
   buttons: boolean[];
   switches: number[];
 };
+
+export type HealthResponse = {
+  status: string;
+  version: string;
+  clients: number;
+  devices: number;
+};
+
+export type ForceFeedbackStatus = {
+  force: number | null;
+  torque: number | null;
+  source: string;
+  available: boolean;
+  status: string | null;
+};

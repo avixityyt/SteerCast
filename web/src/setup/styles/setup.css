@@ -120,6 +120,16 @@ summary {
   font-weight: 650;
   letter-spacing: .01em;
 }
+.brand-version {
+  display: inline-block;
+  margin-left: 5px;
+  color: var(--taupe);
+  font-family: Consolas, monospace;
+  font-size: .52em;
+  font-weight: 500;
+  letter-spacing: .04em;
+  vertical-align: middle;
+}
 .brand p { margin: 2px 0 0; color: var(--muted); font-size: 11px; }
 .topbar-actions { display: flex; align-items: center; gap: 9px; }
 .device-state {
@@ -459,6 +469,20 @@ summary:focus-visible {
   line-height: 1.5;
 }
 .handbrake-card .field { margin-top: 13px; }
+.ffb-card {
+  margin-top: 18px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #1b1815b8;
+}
+.ffb-card.available { border-color: #cedfd955; }
+.ffb-card p { margin: 9px 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.ffb-indicator { width: 7px; height: 7px; border-radius: 50%; background: #596269; }
+.ffb-card.available .ffb-indicator { background: var(--mist); box-shadow: 0 0 0 3px #cedfd91f; }
+.ffb-badge { margin-left: auto; color: var(--taupe); font-family: Consolas, monospace; font-size: 9px; text-transform: uppercase; }
+.ffb-status-line { display: flex; flex-direction: column; gap: 3px; font-size: 10px; font-weight: 650; }
+.ffb-status-line small { color: #77848d; font-size: 9px; font-weight: 400; line-height: 1.4; }
 
 .color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 9px; margin-top: 18px; }
 .color-grid > label { display: grid; gap: 6px; color: #929da4; font-size: 10px; text-transform: capitalize; }
