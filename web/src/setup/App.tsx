@@ -43,6 +43,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const timer = window.setInterval(() => void loadFfbStatus(), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     document.title = `SteerCast v${appVersion} · Setup`;
   }, [appVersion]);
 
@@ -501,6 +506,12 @@ export default function App() {
                   <span>G HUB</span>
                   <small>{ffbStatus?.gHubInstalled ? (ffbStatus.gHubRunning ? "Installed and running" : "Installed") : "Not detected"}</small>
                 </div>
+                {ffbStatus?.available && (
+                  <div class="ffb-values" aria-label="Reported force feedback values">
+                    <span><small>Force</small>{formatFfbValue(ffbStatus.force)}</span>
+                    <span><small>Torque</small>{formatFfbValue(ffbStatus.torque)}</span>
+                  </div>
+                )}
               </section>
               <details class="advanced">
                 <summary>Manual input mapping</summary>
@@ -649,6 +660,10 @@ export default function App() {
       </div>
     </main>
   );
+}
+
+function formatFfbValue(value: number | null) {
+  return value === null || !Number.isFinite(value) ? "—" : value.toLocaleString();
 }
 
 function RailButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {

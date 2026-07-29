@@ -19,7 +19,7 @@ internal static class Program
         Application.SetCompatibleTextRenderingDefault(false);
 
         var profileStore = new ProfileStore();
-        using var inputSource = new WindowsWheelInputSource();
+        using var inputSource = new WindowsWheelInputSource(LogitechSdkForceFeedbackAdapter.CreateOrFallback());
         await using var broadcaster = new InputBroadcaster(inputSource, profileStore);
         await using var server = new LocalServer(Port, profileStore, inputSource, broadcaster);
         server.Start();
