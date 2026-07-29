@@ -10,4 +10,6 @@ public sealed record ForceFeedbackReading(
     double? Torque,
     string Source,
     bool Available,
-    string? Status = null);
+    string? Status = null,
+    bool GHubInstalled = false,
+    bool GHubRunning = false);

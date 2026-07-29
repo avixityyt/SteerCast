@@ -14,12 +14,22 @@ public interface IForceFeedbackAdapter : IDisposable
 
 public sealed class NullForceFeedbackAdapter : IForceFeedbackAdapter
 {
-    public ForceFeedbackReading Status { get; } = new(
-        null,
-        null,
-        "none",
-        false,
-        "Optional Logitech telemetry adapter is not installed.");
+    public ForceFeedbackReading Status { get; }
+
+    public NullForceFeedbackAdapter()
+    {
+        var gHub = LogitechGHubDetector.Detect();
+        Status = new ForceFeedbackReading(
+            null,
+            null,
+            "none",
+            false,
+            gHub.Installed
+                ? "G HUB detected. The separate Logitech telemetry adapter is not installed."
+                : "G HUB and the optional Logitech telemetry adapter are not installed.",
+            gHub.Installed,
+            gHub.Running);
+    }
 
     public ForceFeedbackReading? Read(string deviceId) => null;
 

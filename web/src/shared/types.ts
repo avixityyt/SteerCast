@@ -106,4 +106,6 @@ export type ForceFeedbackStatus = {
   source: string;
   available: boolean;
   status: string | null;
+  gHubInstalled: boolean;
+  gHubRunning: boolean;
 };

@@ -489,11 +489,17 @@ export default function App() {
                 <p>
                   {ffbStatus?.available
                     ? "Reported wheel force and torque can be sent to the OBS overlay."
-                    : "Not connected. SteerCast still reads your wheel normally."}
+                    : ffbStatus?.gHubInstalled
+                      ? "G HUB is detected, but it does not include FFB telemetry by itself."
+                      : "SteerCast still reads your wheel normally without FFB telemetry."}
                 </p>
                 <div class="ffb-status-line">
-                  <span>{ffbStatus?.available ? "Available" : "Unavailable"}</span>
+                  <span>{ffbStatus?.available ? "Telemetry available" : "Telemetry unavailable"}</span>
                   <small>{ffbStatus?.status ?? "Optional Logitech adapter not installed."}</small>
+                </div>
+                <div class="ffb-status-line ffb-ghub-state">
+                  <span>G HUB</span>
+                  <small>{ffbStatus?.gHubInstalled ? (ffbStatus.gHubRunning ? "Installed and running" : "Installed") : "Not detected"}</small>
                 </div>
               </section>
               <details class="advanced">
