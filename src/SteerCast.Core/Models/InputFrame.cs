@@ -16,4 +16,7 @@ public sealed record InputFrame
     public double? Force { get; init; }
     public double? Torque { get; init; }
     public string? ForceFeedbackSource { get; init; }
+    public double? DerivedLoad { get; init; }
+    public int DerivedLoadDirection { get; init; }
+    public string? TelemetrySource { get; init; }
 }

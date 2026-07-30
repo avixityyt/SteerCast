@@ -104,12 +104,16 @@ public sealed class LogitechSdkForceFeedbackAdapter : IForceFeedbackAdapter
             }
 
             var state = Marshal.PtrToStructure<LogiState>(pointer);
+            var force = SelectLargest(("Fx", state.Fx), ("Fy", state.Fy), ("Fz", state.Fz));
+            var torque = SelectLargest(("FRx", state.FRx), ("FRy", state.FRy), ("FRz", state.FRz));
             _status = _status with
             {
-                Force = state.Fx,
-                Torque = state.FRx,
+                Force = force.Value,
+                Torque = torque.Value,
                 Available = true,
-                Status = "Logitech SDK is reporting wheel force and torque."
+                Status = "Logitech SDK is reporting wheel force and torque.",
+                ForceAxis = force.Axis,
+                TorqueAxis = torque.Axis
             };
             return new ForceFeedbackReading(state.Fx, state.FRx, "logitech-sdk", true, _status.Status, _status.GHubInstalled, _status.GHubRunning);
         }
@@ -137,6 +141,9 @@ public sealed class LogitechSdkForceFeedbackAdapter : IForceFeedbackAdapter
 
     private static T LoadDelegate<T>(IntPtr library, string export) where T : Delegate =>
         Marshal.GetDelegateForFunctionPointer<T>(NativeLibrary.GetExport(library, export));
+
+    private static (string Axis, int Value) SelectLargest(params (string Axis, int Value)[] axes) =>
+        axes.MaxBy(axis => Math.Abs((long)axis.Value));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate bool LogiInitialize([MarshalAs(UnmanagedType.I1)] bool ignoreXInputControllers);

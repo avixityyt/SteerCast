@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import type { DeviceDescriptor, ForceFeedbackStatus, HealthResponse, OverlayElement, OverlayProfile, RawDeviceReading } from "../shared/types";
+import type { DeviceDescriptor, ForceFeedbackStatus, GameTelemetryReading, HealthResponse, OverlayElement, OverlayProfile, RawDeviceReading } from "../shared/types";
 import {
   axisRows,
   elementNames,
@@ -28,6 +28,7 @@ export default function App() {
   const [status, setStatus] = useState("Loading");
   const [appVersion, setAppVersion] = useState("dev");
   const [ffbStatus, setFfbStatus] = useState<ForceFeedbackStatus | null>(null);
+  const [dirtRallyTelemetry, setDirtRallyTelemetry] = useState<GameTelemetryReading | null>(null);
   const [dragging, setDragging] = useState<DragState | null>(null);
   const [calibrating, setCalibrating] = useState<string | null>(null);
   const [showLaunchSplash, setShowLaunchSplash] = useState(() => new URLSearchParams(location.search).has("launch"));
@@ -43,7 +44,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => void loadFfbStatus(), 1000);
+    const timer = window.setInterval(() => {
+      void loadFfbStatus();
+      void loadDirtRallyTelemetry();
+    }, 1000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -74,7 +78,7 @@ export default function App() {
 
   async function initialize() {
     try {
-      await Promise.all([loadProfiles(), loadDevices(), loadHealth(), loadFfbStatus()]);
+      await Promise.all([loadProfiles(), loadDevices(), loadHealth(), loadFfbStatus(), loadDirtRallyTelemetry()]);
     } catch {
       setStatus("SteerCast could not load its local settings. Restart the app.");
     }
@@ -91,6 +95,12 @@ export default function App() {
     const response = await fetch("/api/integrations/logitech", { cache: "no-store" });
     if (!response.ok) return;
     setFfbStatus(await response.json());
+  }
+
+  async function loadDirtRallyTelemetry() {
+    const response = await fetch("/api/telemetry/dirt-rally-2", { cache: "no-store" });
+    if (!response.ok) return;
+    setDirtRallyTelemetry(await response.json());
   }
 
   function postPreview(value: OverlayProfile) {
@@ -485,6 +495,28 @@ export default function App() {
                   <span>degrees</span>
                 </div>
               </Field>
+              <section class={`telemetry-card ${dirtRallyTelemetry?.available ? "available" : "unavailable"}`} aria-labelledby="dirt-rally-title">
+                <div class="module-title">
+                  <span class="telemetry-indicator" aria-hidden="true"></span>
+                  <strong id="dirt-rally-title">DiRT Rally 2.0 derived load</strong>
+                  <span class="ffb-badge">Local UDP</span>
+                </div>
+                <p>Visualises vehicle telemetry only. It is not the force applied to your steering wheel.</p>
+                <div class="ffb-status-line" aria-live="polite">
+                  <span>{dirtRallyTelemetry?.available ? (dirtRallyTelemetry.active ? "Receiving load data" : "Receiving telemetry") : "Waiting for telemetry"}</span>
+                  <small>{dirtRallyTelemetry?.status ?? "Starting local telemetry listener…"}</small>
+                </div>
+                <div class="telemetry-meter" role="progressbar" aria-label="Derived vehicle load" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((dirtRallyTelemetry?.strength ?? 0) * 100)}>
+                  <span style={{ transform: `scaleX(${dirtRallyTelemetry?.strength ?? 0})` }}></span>
+                </div>
+                <div class="telemetry-reading"><span>Current load</span><strong>{Math.round((dirtRallyTelemetry?.strength ?? 0) * 100)}%</strong></div>
+                <details class="telemetry-setup">
+                  <summary>Configure DiRT Rally 2.0 telemetry</summary>
+                  <p>Close the game, then edit <code>Documents\My Games\DiRT Rally 2.0\hardwaresettings\hardware_settings_config.xml</code>. Use the same change in the VR file if you play in VR.</p>
+                  <code class="telemetry-config">{`<udp enabled="true" extradata="3" ip="127.0.0.1" port="${dirtRallyTelemetry?.port ?? 20777}" delay="1" />`}</code>
+                  <p>Save the file and restart the game. If another telemetry app already uses this output, configure it to forward packets to this port.</p>
+                </details>
+              </section>
               <section class={`ffb-card ${ffbStatus?.available ? "available" : "unavailable"}`} aria-labelledby="ffb-title">
                 <div class="module-title">
                   <span class="ffb-indicator" aria-hidden="true"></span>
@@ -493,7 +525,7 @@ export default function App() {
                 </div>
                 <p>
                   {ffbStatus?.available
-                    ? "Reported wheel force and torque can be sent to the OBS overlay."
+                    ? "The optional Logitech diagnostic is reporting wheel force and torque values."
                     : ffbStatus?.gHubInstalled
                       ? "G HUB is detected, but it does not include FFB telemetry by itself."
                       : "SteerCast still reads your wheel normally without FFB telemetry."}
@@ -508,8 +540,8 @@ export default function App() {
                 </div>
                 {ffbStatus?.available && (
                   <div class="ffb-values" aria-label="Reported force feedback values">
-                    <span><small>Force</small>{formatFfbValue(ffbStatus.force)}</span>
-                    <span><small>Torque</small>{formatFfbValue(ffbStatus.torque)}</span>
+                    <span><small>{ffbStatus.forceAxis ?? "Force"}</small>{formatFfbValue(ffbStatus.force)}</span>
+                    <span><small>{ffbStatus.torqueAxis ?? "Torque"}</small>{formatFfbValue(ffbStatus.torque)}</span>
                   </div>
                 )}
               </section>

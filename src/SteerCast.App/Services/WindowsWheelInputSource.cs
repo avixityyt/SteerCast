@@ -8,13 +8,15 @@ namespace SteerCast.App.Services;
 public sealed class WindowsWheelInputSource : IWheelInputSource, IForceFeedbackStatusSource, IDisposable
 {
     private readonly IForceFeedbackAdapter _forceFeedback;
+    private readonly IGameTelemetrySource? _gameTelemetry;
     private readonly object _sync = new();
     private readonly ConcurrentDictionary<string, RawState> _rawStates = new(StringComparer.Ordinal);
     private DeviceEntry[] _devices = [];
 
-    public WindowsWheelInputSource(IForceFeedbackAdapter? forceFeedback = null)
+    public WindowsWheelInputSource(IForceFeedbackAdapter? forceFeedback = null, IGameTelemetrySource? gameTelemetry = null)
     {
         _forceFeedback = forceFeedback ?? new NullForceFeedbackAdapter();
+        _gameTelemetry = gameTelemetry;
         Refresh();
         RawGameController.RawGameControllerAdded += (_, _) => Refresh();
         RawGameController.RawGameControllerRemoved += (_, _) => Refresh();
@@ -124,7 +126,7 @@ public sealed class WindowsWheelInputSource : IWheelInputSource, IForceFeedbackS
                 ? ReadRacingWheel(entry, profile, sequence)
                 : ReadRawController(entry, profile, sequence);
             frame = ApplyHandbrakeOverride(frame, profile, handbrakeEntry, entry.Descriptor.Id);
-            return ApplyForceFeedback(frame, entry.Descriptor.Id);
+            return ApplyGameTelemetry(ApplyForceFeedback(frame, entry.Descriptor.Id));
         }
         catch (Exception exception) when (exception is InvalidOperationException or ObjectDisposedException)
         {
@@ -143,6 +145,19 @@ public sealed class WindowsWheelInputSource : IWheelInputSource, IForceFeedbackS
                 Force = telemetry.Force,
                 Torque = telemetry.Torque,
                 ForceFeedbackSource = telemetry.Source
+            };
+    }
+
+    private InputFrame ApplyGameTelemetry(InputFrame frame)
+    {
+        var telemetry = _gameTelemetry?.Reading;
+        return telemetry is not { Available: true }
+            ? frame
+            : frame with
+            {
+                DerivedLoad = telemetry.Strength,
+                DerivedLoadDirection = telemetry.Direction,
+                TelemetrySource = telemetry.Source
             };
     }
 

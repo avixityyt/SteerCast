@@ -19,16 +19,21 @@ internal static class Program
         Application.SetCompatibleTextRenderingDefault(false);
 
         var profileStore = new ProfileStore();
-        using var inputSource = new WindowsWheelInputSource(LogitechSdkForceFeedbackAdapter.CreateOrFallback());
+
+        using var telemetry = new DirtRally2TelemetryAdapter();
+        using var forceFeedback = LogitechSdkForceFeedbackAdapter.CreateOrFallback();
+        using var inputSource = new WindowsWheelInputSource(forceFeedback, telemetry);
         await using var broadcaster = new InputBroadcaster(inputSource, profileStore);
-        await using var server = new LocalServer(Port, profileStore, inputSource, broadcaster);
+        await using var server = new LocalServer(Port, profileStore, inputSource, broadcaster, telemetry);
         server.Start();
+        var alwaysOnTop = args.Contains("--always-on-top", StringComparer.OrdinalIgnoreCase);
 
         using var tray = new NativeTrayApplication(
             server,
             inputSource,
             server.BaseUrl,
-            Path.Combine(AppContext.BaseDirectory, "wwwroot", "brand", "app-icon.ico"));
+            Path.Combine(AppContext.BaseDirectory, "wwwroot", "brand", "app-icon.ico"),
+            alwaysOnTop);
 
         if (!args.Contains("--background", StringComparer.OrdinalIgnoreCase))
         {
@@ -50,4 +55,5 @@ internal static class Program
 [JsonSerializable(typeof(AxisCalibration))]
 [JsonSerializable(typeof(HealthResponse))]
 [JsonSerializable(typeof(ErrorResponse))]
+[JsonSerializable(typeof(GameTelemetryReading))]
 internal partial class AppJsonContext : JsonSerializerContext;

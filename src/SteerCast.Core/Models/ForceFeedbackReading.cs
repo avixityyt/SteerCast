@@ -12,4 +12,6 @@ public sealed record ForceFeedbackReading(
     bool Available,
     string? Status = null,
     bool GHubInstalled = false,
-    bool GHubRunning = false);
+    bool GHubRunning = false,
+    string? ForceAxis = null,
+    string? TorqueAxis = null);

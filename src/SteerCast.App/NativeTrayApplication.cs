@@ -38,6 +38,7 @@ public sealed class NativeTrayApplication : IDisposable
     private readonly string _setupUrl;
     private readonly string _overlayUrl;
     private readonly string _iconPath;
+    private readonly bool _alwaysOnTop;
     private readonly WindowProcedure _windowProcedure;
     private readonly string _windowClass = $"SteerCastTray_{Environment.ProcessId}";
     private IntPtr _window;
@@ -46,13 +47,14 @@ public sealed class NativeTrayApplication : IDisposable
     private SetupWindow? _setupWindow;
     private bool _disposed;
 
-    public NativeTrayApplication(LocalServer server, IWheelInputSource inputSource, string baseUrl, string iconPath)
+    public NativeTrayApplication(LocalServer server, IWheelInputSource inputSource, string baseUrl, string iconPath, bool alwaysOnTop = false)
     {
         _server = server;
         _inputSource = inputSource;
         _setupUrl = $"{baseUrl}setup";
         _overlayUrl = $"{baseUrl}overlay/default";
         _iconPath = iconPath;
+        _alwaysOnTop = alwaysOnTop;
         _windowProcedure = WindowProc;
         CreateMessageWindow();
         AddTrayIcon();
@@ -230,7 +232,7 @@ public sealed class NativeTrayApplication : IDisposable
             return;
         }
 
-        _setupWindow = new SetupWindow(setupUrl, _iconPath);
+        _setupWindow = new SetupWindow(setupUrl, _iconPath) { TopMost = _alwaysOnTop };
         _setupWindow.FormClosed += (_, _) => _setupWindow = null;
         _setupWindow.Show();
         _setupWindow.Activate();

@@ -20,8 +20,15 @@ public sealed class FrameChangeDetector(double analogThreshold = 0.001)
             || Changed(previous.Throttle, next.Throttle)
             || Changed(previous.Brake, next.Brake)
             || Changed(previous.Clutch, next.Clutch)
-            || Changed(previous.Handbrake, next.Handbrake);
+            || Changed(previous.Handbrake, next.Handbrake)
+            || Changed(previous.DerivedLoad, next.DerivedLoad)
+            || previous.DerivedLoadDirection != next.DerivedLoadDirection
+            || previous.TelemetrySource != next.TelemetrySource;
     }
 
     private bool Changed(double previous, double next) => Math.Abs(previous - next) >= analogThreshold;
+
+    private bool Changed(double? previous, double? next) =>
+        previous.HasValue != next.HasValue
+        || (previous.HasValue && next.HasValue && Changed(previous.Value, next.Value));
 }
