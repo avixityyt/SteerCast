@@ -12,8 +12,7 @@ public sealed class LocalServer(
     int port,
     ProfileStore profileStore,
     IWheelInputSource inputSource,
-    InputBroadcaster broadcaster,
-    IGameTelemetrySource telemetrySource) : IAsyncDisposable
+    InputBroadcaster broadcaster) : IAsyncDisposable
 {
     private readonly HttpListener _listener = new();
     private readonly CancellationTokenSource _stopping = new();
@@ -133,21 +132,6 @@ public sealed class LocalServer(
         if (method == "GET" && path == "/api/devices")
         {
             await SendJsonAsync(context, inputSource.GetDevices().ToArray(), AppJsonContext.Default.DeviceDescriptorArray, 200, cancellationToken);
-            return;
-        }
-
-        if (method == "GET" && path == "/api/integrations/logitech")
-        {
-            var status = inputSource is IForceFeedbackStatusSource source
-                ? source.ForceFeedbackStatus
-                : new ForceFeedbackReading(null, null, "none", false, "Optional telemetry adapter is not installed.");
-            await SendJsonAsync(context, status, AppJsonContext.Default.ForceFeedbackReading, 200, cancellationToken);
-            return;
-        }
-
-        if (method == "GET" && path == "/api/telemetry/dirt-rally-2")
-        {
-            await SendJsonAsync(context, telemetrySource.Reading, AppJsonContext.Default.GameTelemetryReading, 200, cancellationToken);
             return;
         }
 

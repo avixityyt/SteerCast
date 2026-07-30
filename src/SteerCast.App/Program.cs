@@ -20,11 +20,9 @@ internal static class Program
 
         var profileStore = new ProfileStore();
 
-        using var telemetry = new DirtRally2TelemetryAdapter();
-        using var forceFeedback = LogitechSdkForceFeedbackAdapter.CreateOrFallback();
-        using var inputSource = new WindowsWheelInputSource(forceFeedback, telemetry);
+        using var inputSource = new WindowsWheelInputSource();
         await using var broadcaster = new InputBroadcaster(inputSource, profileStore);
-        await using var server = new LocalServer(Port, profileStore, inputSource, broadcaster, telemetry);
+        await using var server = new LocalServer(Port, profileStore, inputSource, broadcaster);
         server.Start();
         var alwaysOnTop = args.Contains("--always-on-top", StringComparer.OrdinalIgnoreCase);
 
@@ -50,10 +48,8 @@ internal static class Program
 [JsonSerializable(typeof(OverlayProfile[]))]
 [JsonSerializable(typeof(DeviceDescriptor[]))]
 [JsonSerializable(typeof(RawDeviceReading))]
-[JsonSerializable(typeof(ForceFeedbackReading))]
 [JsonSerializable(typeof(CalibrationRequest))]
 [JsonSerializable(typeof(AxisCalibration))]
 [JsonSerializable(typeof(HealthResponse))]
 [JsonSerializable(typeof(ErrorResponse))]
-[JsonSerializable(typeof(GameTelemetryReading))]
 internal partial class AppJsonContext : JsonSerializerContext;

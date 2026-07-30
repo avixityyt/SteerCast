@@ -83,9 +83,6 @@ export type InputFrame = {
   handbrake: number;
   gear: number;
   buttons: number;
-  derivedLoad?: number | null;
-  derivedLoadDirection?: number;
-  telemetrySource?: string | null;
 };
 
 export type RawDeviceReading = {
@@ -101,28 +98,4 @@ export type HealthResponse = {
   version: string;
   clients: number;
   devices: number;
-};
-
-export type ForceFeedbackStatus = {
-  force: number | null;
-  torque: number | null;
-  source: string;
-  available: boolean;
-  status: string | null;
-  gHubInstalled: boolean;
-  gHubRunning: boolean;
-  forceAxis: string | null;
-  torqueAxis: string | null;
-};
-
-export type GameTelemetryReading = {
-  source: string;
-  gameName: string;
-  available: boolean;
-  active: boolean;
-  strength: number;
-  direction: number;
-  timestamp: number;
-  port: number;
-  status: string;
 };

@@ -469,59 +469,6 @@ summary:focus-visible {
   line-height: 1.5;
 }
 .handbrake-card .field { margin-top: 13px; }
-.ffb-card {
-  margin-top: 18px;
-  padding: 13px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #1b1815b8;
-}
-.telemetry-card {
-  margin-top: 18px;
-  padding: 13px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #1b1815b8;
-}
-.telemetry-card.available { border-color: #cedfd955; }
-.telemetry-card p { margin: 9px 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
-.telemetry-indicator { width: 7px; height: 7px; border-radius: 50%; background: #596269; }
-.telemetry-card.available .telemetry-indicator { background: var(--mist); box-shadow: 0 0 0 3px #cedfd91f; }
-.telemetry-meter {
-  height: 7px;
-  margin-top: 12px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #10100e;
-}
-.telemetry-meter span {
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform: scaleX(0);
-  transform-origin: left center;
-  background: var(--mist);
-  transition: transform 160ms ease-out;
-}
-.telemetry-reading { display: flex; justify-content: space-between; margin-top: 7px; color: #77848d; font-size: 10px; }
-.telemetry-reading strong { color: var(--ice); font-family: Consolas, monospace; font-size: 11px; font-variant-numeric: tabular-nums; }
-.telemetry-setup { margin-top: 12px; border-top: 1px solid color-mix(in srgb, var(--line-soft) 74%, transparent); }
-.telemetry-setup summary { padding-top: 10px; color: #b8c1c6; cursor: pointer; font-size: 10px; font-weight: 600; }
-.telemetry-setup p { margin: 8px 0; }
-.telemetry-setup code { overflow-wrap: anywhere; color: var(--ice); font-family: Consolas, monospace; font-size: 9px; }
-.telemetry-config { display: block; padding: 8px; border-radius: 4px; background: #10100e; }
-.ffb-card.available { border-color: #cedfd955; }
-.ffb-card p { margin: 9px 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
-.ffb-indicator { width: 7px; height: 7px; border-radius: 50%; background: #596269; }
-.ffb-card.available .ffb-indicator { background: var(--mist); box-shadow: 0 0 0 3px #cedfd91f; }
-.ffb-badge { margin-left: auto; color: var(--taupe); font-family: Consolas, monospace; font-size: 9px; text-transform: uppercase; }
-.ffb-status-line { display: flex; flex-direction: column; gap: 3px; font-size: 10px; font-weight: 650; }
-.ffb-status-line small { color: #77848d; font-size: 9px; font-weight: 400; line-height: 1.4; }
-.ffb-ghub-state { margin-top: 10px; padding-top: 9px; border-top: 1px solid color-mix(in srgb, var(--line-soft) 74%, transparent); }
-.ffb-values { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 10px; }
-.ffb-values > span { display: grid; gap: 3px; padding: 8px; border-radius: 5px; background: #10100e; color: var(--ice); font-family: Consolas, monospace; font-size: 12px; font-variant-numeric: tabular-nums; }
-.ffb-values small { color: #77848d; font-family: "Segoe UI", system-ui, sans-serif; font-size: 9px; font-weight: 600; text-transform: uppercase; }
-
 .color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 9px; margin-top: 18px; }
 .color-grid > label { display: grid; gap: 6px; color: #929da4; font-size: 10px; text-transform: capitalize; }
 .color-control {

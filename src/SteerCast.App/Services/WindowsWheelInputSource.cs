@@ -5,18 +5,14 @@ using Windows.Gaming.Input;
 
 namespace SteerCast.App.Services;
 
-public sealed class WindowsWheelInputSource : IWheelInputSource, IForceFeedbackStatusSource, IDisposable
+public sealed class WindowsWheelInputSource : IWheelInputSource, IDisposable
 {
-    private readonly IForceFeedbackAdapter _forceFeedback;
-    private readonly IGameTelemetrySource? _gameTelemetry;
     private readonly object _sync = new();
     private readonly ConcurrentDictionary<string, RawState> _rawStates = new(StringComparer.Ordinal);
     private DeviceEntry[] _devices = [];
 
-    public WindowsWheelInputSource(IForceFeedbackAdapter? forceFeedback = null, IGameTelemetrySource? gameTelemetry = null)
+    public WindowsWheelInputSource()
     {
-        _forceFeedback = forceFeedback ?? new NullForceFeedbackAdapter();
-        _gameTelemetry = gameTelemetry;
         Refresh();
         RawGameController.RawGameControllerAdded += (_, _) => Refresh();
         RawGameController.RawGameControllerRemoved += (_, _) => Refresh();
@@ -125,8 +121,7 @@ public sealed class WindowsWheelInputSource : IWheelInputSource, IForceFeedbackS
             var frame = entry.Wheel is not null
                 ? ReadRacingWheel(entry, profile, sequence)
                 : ReadRawController(entry, profile, sequence);
-            frame = ApplyHandbrakeOverride(frame, profile, handbrakeEntry, entry.Descriptor.Id);
-            return ApplyGameTelemetry(ApplyForceFeedback(frame, entry.Descriptor.Id));
+            return ApplyHandbrakeOverride(frame, profile, handbrakeEntry, entry.Descriptor.Id);
         }
         catch (Exception exception) when (exception is InvalidOperationException or ObjectDisposedException)
         {
@@ -135,35 +130,9 @@ public sealed class WindowsWheelInputSource : IWheelInputSource, IForceFeedbackS
         }
     }
 
-    private InputFrame ApplyForceFeedback(InputFrame frame, string deviceId)
+    public void Dispose()
     {
-        var telemetry = _forceFeedback.Read(deviceId);
-        return telemetry is null
-            ? frame
-            : frame with
-            {
-                Force = telemetry.Force,
-                Torque = telemetry.Torque,
-                ForceFeedbackSource = telemetry.Source
-            };
     }
-
-    private InputFrame ApplyGameTelemetry(InputFrame frame)
-    {
-        var telemetry = _gameTelemetry?.Reading;
-        return telemetry is not { Available: true }
-            ? frame
-            : frame with
-            {
-                DerivedLoad = telemetry.Strength,
-                DerivedLoadDirection = telemetry.Direction,
-                TelemetrySource = telemetry.Source
-            };
-    }
-
-    public ForceFeedbackReading ForceFeedbackStatus => _forceFeedback.Status;
-
-    public void Dispose() => _forceFeedback.Dispose();
 
     private static InputFrame ReadRacingWheel(DeviceEntry entry, OverlayProfile profile, long sequence)
     {
