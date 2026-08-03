@@ -31,14 +31,15 @@ public sealed class NativeTrayApplication : IDisposable
     private const uint MenuCopy = 2;
     private const uint MenuRefresh = 3;
     private const uint MenuStartup = 4;
-    private const uint MenuExit = 5;
+    private const uint MenuAlwaysOnTop = 5;
+    private const uint MenuExit = 6;
 
     private readonly LocalServer _server;
     private readonly IWheelInputSource _inputSource;
     private readonly string _setupUrl;
     private readonly string _overlayUrl;
     private readonly string _iconPath;
-    private readonly bool _alwaysOnTop;
+    private bool _alwaysOnTop;
     private readonly WindowProcedure _windowProcedure;
     private readonly string _windowClass = $"SteerCastTray_{Environment.ProcessId}";
     private IntPtr _window;
@@ -175,6 +176,7 @@ public sealed class NativeTrayApplication : IDisposable
             AppendMenu(menu, MfString, MenuCopy, "Copy OBS URL");
             AppendMenu(menu, MfString, MenuRefresh, "Reconnect devices");
             AppendMenu(menu, MfString | (StartupRegistration.IsEnabled() ? MfChecked : 0), MenuStartup, "Launch at sign-in");
+            AppendMenu(menu, MfString | (_alwaysOnTop ? MfChecked : 0), MenuAlwaysOnTop, "Keep setup on top");
             AppendMenu(menu, MfSeparator, 0, null);
             AppendMenu(menu, MfString, MenuExit, "Exit");
 
@@ -204,6 +206,17 @@ public sealed class NativeTrayApplication : IDisposable
                 break;
             case MenuStartup:
                 StartupRegistration.SetEnabled(!StartupRegistration.IsEnabled());
+                break;
+            case MenuAlwaysOnTop:
+                _alwaysOnTop = !_alwaysOnTop;
+                if (_setupWindow is { IsDisposed: false } setupWindow)
+                {
+                    setupWindow.TopMost = _alwaysOnTop;
+                    if (_alwaysOnTop)
+                    {
+                        setupWindow.Activate();
+                    }
+                }
                 break;
             case MenuExit:
                 Dispose();
