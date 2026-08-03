@@ -13,4 +13,8 @@ public sealed record InputFrame
     public double Handbrake { get; init; }
     public int Gear { get; init; }
     public ulong Buttons { get; init; }
+    public double? GameTelemetryStrength { get; init; }
+    public int GameTelemetryDirection { get; init; }
+    public string? GameTelemetryKind { get; init; }
+    public string? GameTelemetrySource { get; init; }
 }

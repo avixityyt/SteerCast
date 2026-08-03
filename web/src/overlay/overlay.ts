@@ -14,6 +14,9 @@ const pedalImages = {
 };
 const shifterImage = required<HTMLImageElement>("shifter-image");
 const steeringValue = required<HTMLOutputElement>("steering-value");
+const gameTelemetry = required<HTMLElement>("game-telemetry");
+const gameTelemetryFill = required<HTMLElement>("game-telemetry-fill");
+const gameTelemetryValue = required<HTMLOutputElement>("game-telemetry-value");
 const gear = required<HTMLOutputElement>("gear");
 const shiftStick = required<HTMLElement>("shift-stick");
 const handbrakeLever = required<HTMLElement>("handbrake-lever");
@@ -105,6 +108,7 @@ function applyFrame(frame: InputFrame) {
   wheel.style.transform = `rotate(${degrees}deg)`;
   steeringIndicator.style.transform = `translate3d(${frame.steering * 84}px, 0, 0)`;
   steeringValue.value = `${Math.round(degrees)} degrees`;
+  setGameTelemetry(frame.gameTelemetryStrength, frame.gameTelemetryKind);
   setPedal(pedalChannels.clutch, pedalImages.clutch, frame.clutch);
   setPedal(pedalChannels.brake, pedalImages.brake, frame.brake);
   setPedal(pedalChannels.throttle, pedalImages.throttle, frame.throttle);
@@ -117,6 +121,16 @@ function applyFrame(frame: InputFrame) {
     const bit = BigInt(Number(button.dataset.bit));
     button.classList.toggle("pressed", (mask & (1n << bit)) !== 0n);
   }
+}
+
+function setGameTelemetry(value: number | null | undefined, kind: string | null | undefined) {
+  const visible = kind === "derived-telemetry" && Number.isFinite(value);
+  gameTelemetry.hidden = !visible;
+  if (!visible) return;
+
+  const normalized = clamp01(value ?? 0);
+  gameTelemetryFill.style.transform = `scaleX(${normalized})`;
+  gameTelemetryValue.value = `${Math.round(normalized * 100)}%`;
 }
 
 function setPedal(element: HTMLElement, assetImage: HTMLElement, value: number) {

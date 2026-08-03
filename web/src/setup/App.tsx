@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import type { DeviceDescriptor, HealthResponse, OverlayElement, OverlayProfile, RawDeviceReading } from "../shared/types";
+import type { DeviceDescriptor, GameIntegrationSettings, GameIntegrationSnapshot, HealthResponse, OverlayElement, OverlayProfile, RawDeviceReading } from "../shared/types";
 import {
   axisRows,
   elementNames,
@@ -18,15 +18,23 @@ const maxCanvasWidth = 3840;
 const maxCanvasHeight = 2160;
 const minElementScale = 0.4;
 const maxElementScale = 2;
+const panelNames: PanelName[] = ["device", "games", "layout", "appearance", "obs"];
+
+function panelFromUrl(): PanelName {
+  const value = new URLSearchParams(location.search).get("panel") as PanelName | null;
+  return value && panelNames.includes(value) ? value : "device";
+}
 
 export default function App() {
   const [profiles, setProfiles] = useState<OverlayProfile[]>([]);
   const [devices, setDevices] = useState<DeviceDescriptor[]>([]);
   const [selectedId, setSelectedId] = useState("default");
   const [profile, setProfile] = useState<OverlayProfile | null>(null);
-  const [panel, setPanel] = useState<PanelName>("device");
+  const [panel, setPanel] = useState<PanelName>(panelFromUrl);
   const [status, setStatus] = useState("Loading");
   const [appVersion, setAppVersion] = useState("dev");
+  const [gameIntegration, setGameIntegration] = useState<GameIntegrationSnapshot | null>(null);
+  const [integrationSaving, setIntegrationSaving] = useState(false);
   const [dragging, setDragging] = useState<DragState | null>(null);
   const [calibrating, setCalibrating] = useState<string | null>(null);
   const [showLaunchSplash, setShowLaunchSplash] = useState(() => new URLSearchParams(location.search).has("launch"));
@@ -42,8 +50,21 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (panel !== "games") return;
+    void loadGameIntegration().catch(() => undefined);
+    const timer = window.setInterval(() => void loadGameIntegration().catch(() => undefined), 1000);
+    return () => window.clearInterval(timer);
+  }, [panel]);
+
+  useEffect(() => {
     document.title = `SteerCast v${appVersion} · Setup`;
   }, [appVersion]);
+
+  useEffect(() => {
+    const restorePanel = () => setPanel(panelFromUrl());
+    window.addEventListener("popstate", restorePanel);
+    return () => window.removeEventListener("popstate", restorePanel);
+  }, []);
 
   useEffect(() => {
     if (!showLaunchSplash) return;
@@ -68,7 +89,7 @@ export default function App() {
 
   async function initialize() {
     try {
-      await Promise.all([loadProfiles(), loadDevices(), loadHealth()]);
+      await Promise.all([loadProfiles(), loadDevices(), loadHealth(), loadGameIntegration()]);
     } catch {
       setStatus("SteerCast could not load its local settings. Restart the app.");
     }
@@ -81,11 +102,47 @@ export default function App() {
     setAppVersion(health.version.replace(/\.0$/, ""));
   }
 
+  async function loadGameIntegration() {
+    const response = await fetch("/api/game-integrations", { cache: "no-store" });
+    if (!response.ok) throw new Error("Could not load game integrations");
+    setGameIntegration(await response.json());
+  }
+
+  async function updateGameIntegration(patch: Partial<GameIntegrationSettings>) {
+    if (!gameIntegration || integrationSaving) return;
+    const settings = { ...gameIntegration.settings, ...patch };
+    setIntegrationSaving(true);
+    setStatus("Applying game integration");
+    try {
+      const response = await fetch("/api/game-integrations", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(settings)
+      });
+      if (!response.ok) throw new Error();
+      setGameIntegration(await response.json());
+      setStatus(settings.enabled ? "Game integration enabled" : "Game integration disabled");
+    } catch {
+      setStatus("Game integration could not be changed.");
+      await loadGameIntegration().catch(() => undefined);
+    } finally {
+      setIntegrationSaving(false);
+    }
+  }
+
   function postPreview(value: OverlayProfile) {
     previewRef.current?.contentWindow?.postMessage(
       { type: "steercast-preview-profile", profile: value },
       location.origin
     );
+  }
+
+  function selectPanel(nextPanel: PanelName) {
+    setPanel(nextPanel);
+    const url = new URL(location.href);
+    if (nextPanel === "device") url.searchParams.delete("panel");
+    else url.searchParams.set("panel", nextPanel);
+    history.pushState(null, "", url);
   }
 
   async function loadProfiles() {
@@ -313,6 +370,7 @@ export default function App() {
     ?? (automaticDevice ? `Automatic: ${automaticDevice.name}` : "No controller found");
   const isKnownTheme = Object.keys(themes).includes(profile.theme.name);
   const previewAspect = normalizeCanvasWidth(profile.width, 800) / normalizeCanvasHeight(profile.height, 600);
+  const selectedGame = gameIntegration?.games.find((game) => game.id === gameIntegration.settings.gameId);
 
   return (
     <main class="app-shell">
@@ -360,10 +418,11 @@ export default function App() {
             </select>
           </label>
           <div class="rail-tabs">
-            <RailButton active={panel === "device"} label="Controller" onClick={() => setPanel("device")} />
-            <RailButton active={panel === "layout"} label="Layout" onClick={() => setPanel("layout")} />
-            <RailButton active={panel === "appearance"} label="Appearance" onClick={() => setPanel("appearance")} />
-            <RailButton active={panel === "obs"} label="OBS setup" onClick={() => setPanel("obs")} />
+            <RailButton active={panel === "device"} label="Controller" onClick={() => selectPanel("device")} />
+            <RailButton active={panel === "games"} label="Games" onClick={() => selectPanel("games")} />
+            <RailButton active={panel === "layout"} label="Layout" onClick={() => selectPanel("layout")} />
+            <RailButton active={panel === "appearance"} label="Appearance" onClick={() => selectPanel("appearance")} />
+            <RailButton active={panel === "obs"} label="OBS setup" onClick={() => selectPanel("obs")} />
           </div>
           <div class="rail-footer">
             <div class="rail-status">
@@ -524,6 +583,99 @@ export default function App() {
                   />
                 </Field>
               </details>
+            </>
+          )}
+
+          {panel === "games" && (
+            <>
+              <InspectorHeader
+                title="Game integrations"
+                description="Add optional game-exported data without touching the wheel or game process."
+              />
+              {gameIntegration ? (
+                <div class="integration-panel">
+                  <Field label="Game">
+                    <select
+                      name="game-integration"
+                      aria-label="Game"
+                      value={gameIntegration.settings.gameId}
+                      disabled={integrationSaving || gameIntegration.settings.enabled}
+                      onChange={(event) => void updateGameIntegration({ gameId: event.currentTarget.value })}
+                    >
+                      {gameIntegration.games.map((game) => <option value={game.id}>{game.name}</option>)}
+                    </select>
+                  </Field>
+
+                  <div class="integration-control-row">
+                    <div>
+                      <strong>Enable integration</strong>
+                      <p>Starts a local listener only for the selected game.</p>
+                    </div>
+                    <label class="switch" aria-label="Enable game integration">
+                      <input
+                        type="checkbox"
+                        checked={gameIntegration.settings.enabled}
+                        disabled={integrationSaving}
+                        onChange={(event) => void updateGameIntegration({ enabled: event.currentTarget.checked })}
+                      />
+                      <span></span>
+                    </label>
+                  </div>
+
+                  <div class={`integration-status ${gameIntegration.telemetry.available ? "receiving" : "waiting"}`} aria-live="polite">
+                    <span class="integration-status-dot" aria-hidden="true"></span>
+                    <div>
+                      <strong>{gameIntegration.telemetry.available ? "Receiving telemetry" : gameIntegration.settings.enabled ? "Waiting for game" : "Integration off"}</strong>
+                      <p>{gameIntegration.telemetry.status}</p>
+                    </div>
+                  </div>
+
+                  <section class="integration-section" aria-labelledby="signal-heading">
+                    <div class="integration-section-heading">
+                      <h3 id="signal-heading">Signal</h3>
+                      <span class="quality-badge">Not FFB</span>
+                    </div>
+                    <strong class="signal-name">{selectedGame?.signalLabel ?? "Derived vehicle load"}</strong>
+                    <p>{selectedGame?.summary}</p>
+                    <div class="integration-meter" role="progressbar" aria-label="Derived vehicle load" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(gameIntegration.telemetry.strength * 100)}>
+                      <span style={{ transform: `scaleX(${gameIntegration.telemetry.strength})` }}></span>
+                    </div>
+                    <output class="integration-value">{Math.round(gameIntegration.telemetry.strength * 100)}%</output>
+                  </section>
+
+                  <section class="integration-section" aria-labelledby="overlay-output-heading">
+                    <div class="integration-control-row compact">
+                      <div>
+                        <h3 id="overlay-output-heading">Overlay output</h3>
+                        <p>Show a clearly labelled derived-load meter near the steering readout.</p>
+                      </div>
+                      <label class="switch" aria-label="Show game telemetry on overlay">
+                        <input
+                          type="checkbox"
+                          checked={gameIntegration.settings.showOnOverlay}
+                          disabled={integrationSaving || !gameIntegration.settings.enabled}
+                          onChange={(event) => void updateGameIntegration({ showOnOverlay: event.currentTarget.checked })}
+                        />
+                        <span></span>
+                      </label>
+                    </div>
+                  </section>
+
+                  <details class="integration-setup">
+                    <summary>Connect DiRT Rally 2.0</summary>
+                    <ol>
+                      <li>Close the game.</li>
+                      <li>Edit <code>Documents\My Games\DiRT Rally 2.0\hardwaresettings\hardware_settings_config.xml</code>.</li>
+                      <li>Set <code>{`<udp enabled="true" extradata="3" ip="127.0.0.1" port="${selectedGame?.port ?? 20777}" delay="1" />`}</code>.</li>
+                      <li>Save the file, restart the game, then begin a stage.</li>
+                    </ol>
+                  </details>
+
+                  <p class="local-note">Local only. No process access, injection, virtual controller, or wheel commands.</p>
+                </div>
+              ) : (
+                <p class="panel-loading" role="status">Loading game integrations…</p>
+              )}
             </>
           )}
 

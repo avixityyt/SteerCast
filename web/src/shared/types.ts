@@ -83,6 +83,10 @@ export type InputFrame = {
   handbrake: number;
   gear: number;
   buttons: number;
+  gameTelemetryStrength?: number | null;
+  gameTelemetryDirection?: number;
+  gameTelemetryKind?: string | null;
+  gameTelemetrySource?: string | null;
 };
 
 export type RawDeviceReading = {
@@ -98,4 +102,39 @@ export type HealthResponse = {
   version: string;
   clients: number;
   devices: number;
+};
+
+export type GameIntegrationSettings = {
+  enabled: boolean;
+  gameId: string;
+  showOnOverlay: boolean;
+};
+
+export type GameIntegrationDescriptor = {
+  id: string;
+  name: string;
+  signalKind: string;
+  signalLabel: string;
+  port: number;
+  summary: string;
+};
+
+export type GameTelemetryReading = {
+  source: string;
+  gameName: string;
+  signalKind: string;
+  signalLabel: string;
+  available: boolean;
+  active: boolean;
+  strength: number;
+  direction: number;
+  timestamp: number;
+  port: number;
+  status: string;
+};
+
+export type GameIntegrationSnapshot = {
+  settings: GameIntegrationSettings;
+  games: GameIntegrationDescriptor[];
+  telemetry: GameTelemetryReading;
 };

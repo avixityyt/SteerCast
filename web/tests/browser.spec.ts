@@ -12,7 +12,15 @@ test("setup loads the saved profile and OBS URL", async ({ page }) => {
   await expect(page.getByTitle("Live SteerCast overlay preview")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save changes" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Layout" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Games" })).toBeVisible();
   await expect(page.getByLabel("Handbrake input")).toBeVisible();
+  await page.getByRole("button", { name: "Games" }).click();
+  await expect(page).toHaveURL(/panel=games/);
+  await expect(page.getByRole("heading", { name: "Game integrations" })).toBeVisible();
+  await expect(page.locator('select[name="game-integration"]')).toHaveValue("dirt-rally-2");
+  await expect(page.getByLabel("Enable game integration")).toBeAttached();
+  await expect(page.getByText("Not FFB", { exact: true })).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "Derived vehicle load" })).toBeVisible();
   await page.getByRole("button", { name: "Layout" }).click();
   await expect(page.getByRole("button", { name: "Reset module positions" })).toBeVisible();
   await page.getByRole("button", { name: "Appearance" }).click();
@@ -151,7 +159,11 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
     clutch: 1,
     handbrake: 0,
     gear: 0,
-    buttons: 0
+    buttons: 0,
+    gameTelemetryStrength: 0.68,
+    gameTelemetryDirection: -1,
+    gameTelemetryKind: "derived-telemetry",
+    gameTelemetrySource: "dirt-rally-2-udp"
   };
 
   await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), frame);
@@ -171,6 +183,8 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
   expect(throttleRail!.x).toBeGreaterThan(brakeRail!.x);
   expect(throttleRail!.height).toBeGreaterThan(throttleRail!.width * 5);
   await expect(page.locator(".feedback-readout")).toHaveCount(0);
+  await expect(page.locator("#game-telemetry")).toBeVisible();
+  await expect(page.locator("#game-telemetry-value")).toHaveText("68%");
 });
 
 test("setup remains usable at a narrow desktop width", async ({ page }) => {

@@ -20,9 +20,10 @@ internal static class Program
 
         var profileStore = new ProfileStore();
 
+        using var gameIntegrations = new GameIntegrationManager();
         using var inputSource = new WindowsWheelInputSource();
-        await using var broadcaster = new InputBroadcaster(inputSource, profileStore);
-        await using var server = new LocalServer(Port, profileStore, inputSource, broadcaster);
+        await using var broadcaster = new InputBroadcaster(inputSource, profileStore, gameIntegrations);
+        await using var server = new LocalServer(Port, profileStore, inputSource, broadcaster, gameIntegrations);
         server.Start();
         var alwaysOnTop = args.Contains("--always-on-top", StringComparer.OrdinalIgnoreCase);
 
@@ -48,6 +49,10 @@ internal static class Program
 [JsonSerializable(typeof(OverlayProfile[]))]
 [JsonSerializable(typeof(DeviceDescriptor[]))]
 [JsonSerializable(typeof(RawDeviceReading))]
+[JsonSerializable(typeof(GameIntegrationSettings))]
+[JsonSerializable(typeof(GameIntegrationDescriptor[]))]
+[JsonSerializable(typeof(GameTelemetryReading))]
+[JsonSerializable(typeof(GameIntegrationSnapshot))]
 [JsonSerializable(typeof(CalibrationRequest))]
 [JsonSerializable(typeof(AxisCalibration))]
 [JsonSerializable(typeof(HealthResponse))]

@@ -12,7 +12,8 @@ public sealed class LocalServer(
     int port,
     ProfileStore profileStore,
     IWheelInputSource inputSource,
-    InputBroadcaster broadcaster) : IAsyncDisposable
+    InputBroadcaster broadcaster,
+    GameIntegrationManager gameIntegrations) : IAsyncDisposable
 {
     private readonly HttpListener _listener = new();
     private readonly CancellationTokenSource _stopping = new();
@@ -132,6 +133,56 @@ public sealed class LocalServer(
         if (method == "GET" && path == "/api/devices")
         {
             await SendJsonAsync(context, inputSource.GetDevices().ToArray(), AppJsonContext.Default.DeviceDescriptorArray, 200, cancellationToken);
+            return;
+        }
+
+        if (method == "GET" && path == "/api/game-integrations")
+        {
+            await SendJsonAsync(
+                context,
+                gameIntegrations.Snapshot,
+                AppJsonContext.Default.GameIntegrationSnapshot,
+                200,
+                cancellationToken);
+            return;
+        }
+
+        if (method == "PUT" && path == "/api/game-integrations")
+        {
+            var settings = await JsonSerializer.DeserializeAsync(
+                context.Request.InputStream,
+                AppJsonContext.Default.GameIntegrationSettings,
+                cancellationToken);
+            if (settings is null)
+            {
+                await SendJsonAsync(
+                    context,
+                    new ErrorResponse("Game integration settings are required."),
+                    AppJsonContext.Default.ErrorResponse,
+                    400,
+                    cancellationToken);
+                return;
+            }
+
+            try
+            {
+                var snapshot = await gameIntegrations.UpdateAsync(settings, cancellationToken);
+                await SendJsonAsync(
+                    context,
+                    snapshot,
+                    AppJsonContext.Default.GameIntegrationSnapshot,
+                    200,
+                    cancellationToken);
+            }
+            catch (ArgumentException exception)
+            {
+                await SendJsonAsync(
+                    context,
+                    new ErrorResponse(exception.Message),
+                    AppJsonContext.Default.ErrorResponse,
+                    400,
+                    cancellationToken);
+            }
             return;
         }
 

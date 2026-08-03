@@ -2,7 +2,7 @@ import type { OverlayProfile } from "../shared/types";
 
 export const elementNames = ["wheel", "pedals", "gear", "handbrake", "buttons"] as const;
 export type ElementName = (typeof elementNames)[number];
-export type PanelName = "device" | "layout" | "appearance" | "obs";
+export type PanelName = "device" | "games" | "layout" | "appearance" | "obs";
 export type DragState = { name: ElementName; offsetX: number; offsetY: number };
 
 export const elementSizes: Record<ElementName, { width: number; height: number }> = {

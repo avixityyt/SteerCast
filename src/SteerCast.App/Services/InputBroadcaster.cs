@@ -8,7 +8,8 @@ namespace SteerCast.App.Services;
 
 public sealed class InputBroadcaster(
     IWheelInputSource inputSource,
-    ProfileStore profileStore) : IAsyncDisposable
+    ProfileStore profileStore,
+    GameIntegrationManager? gameIntegrations = null) : IAsyncDisposable
 {
     private static readonly long HeartbeatInterval = Stopwatch.Frequency / 2;
     private readonly ConcurrentDictionary<Guid, Subscription> _subscriptions = [];
@@ -64,6 +65,10 @@ public sealed class InputBroadcaster(
                 }
 
                 var frame = inputSource.Read(profile, Interlocked.Increment(ref _sequence));
+                if (gameIntegrations is not null)
+                {
+                    frame = gameIntegrations.Apply(frame);
+                }
                 var cadence = _cadences.GetOrAdd(group.Key, _ => new PublishCadence());
                 var now = Stopwatch.GetTimestamp();
                 var interval = Stopwatch.Frequency / Math.Clamp(profile.FramesPerSecond, 1, 120);
