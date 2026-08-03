@@ -18,6 +18,9 @@ test("setup loads the saved profile and OBS URL", async ({ page }) => {
   await expect(page).toHaveURL(/panel=games/);
   await expect(page.getByRole("heading", { name: "Game integrations" })).toBeVisible();
   await expect(page.locator('select[name="game-integration"]')).toHaveValue("dirt-rally-2");
+  await expect(page.getByRole("heading", { name: "Quick setup" })).toBeVisible();
+  await expect(page.getByText("Start a stage", { exact: true })).toBeVisible();
+  await expect(page.getByText(/less than two minutes/i)).toBeVisible();
   await expect(page.getByLabel("Enable game integration")).toBeAttached();
   await expect(page.getByText("Not FFB", { exact: true })).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "Derived vehicle load" })).toBeVisible();

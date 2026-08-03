@@ -21,7 +21,13 @@ The first adapter listens on `127.0.0.1:20777` only while enabled. It consumes
 the game's `extradata="3"` UDP packet and derives vehicle load from lateral G,
 longitudinal G, and suspension motion. It does not represent wheel resistance.
 
-Close the game and edit:
+The Games panel detects the normal and VR configuration files. Its Quick setup
+action creates a one-time `.steercast-backup` beside each file, changes only the
+UDP attributes, replaces the file atomically, and enables the local listener.
+The user must close the game before running automatic setup. The UI confirms
+completion only after a telemetry packet arrives during a stage.
+
+If automatic setup is unavailable, close the game and edit:
 
 `Documents\My Games\DiRT Rally 2.0\hardwaresettings\hardware_settings_config.xml`
 

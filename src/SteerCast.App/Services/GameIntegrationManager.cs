@@ -19,16 +19,18 @@ public sealed class GameIntegrationManager : IDisposable
     private readonly object _sync = new();
     private readonly SemaphoreSlim _writeGate = new(1, 1);
     private readonly string _settingsPath;
+    private readonly DirtRally2SetupService _setupService;
     private GameIntegrationSettings _settings;
     private IGameTelemetrySource? _activeSource;
     private bool _disposed;
 
-    public GameIntegrationManager(string? settingsPath = null)
+    public GameIntegrationManager(string? settingsPath = null, string? documentsPath = null)
     {
         _settingsPath = settingsPath ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "SteerCast",
             "game-integration.json");
+        _setupService = new DirtRally2SetupService(documentsPath);
         _settings = LoadSettings(_settingsPath);
         ApplyAdapterState();
     }
@@ -39,8 +41,23 @@ public sealed class GameIntegrationManager : IDisposable
         {
             lock (_sync)
             {
-                return new GameIntegrationSnapshot(_settings, SupportedGames, CurrentReading());
+                return new GameIntegrationSnapshot(_settings, SupportedGames, CurrentReading(), _setupService.Inspect());
             }
+        }
+    }
+
+    public GameIntegrationSnapshot ConfigureSelectedGame()
+    {
+        lock (_sync)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (!string.Equals(_settings.GameId, DirtRally2TelemetryAdapter.GameId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Automatic setup is not available for the selected game.");
+            }
+
+            _setupService.Configure();
+            return new GameIntegrationSnapshot(_settings, SupportedGames, CurrentReading(), _setupService.Inspect());
         }
     }
 

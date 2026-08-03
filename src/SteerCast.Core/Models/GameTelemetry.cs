@@ -31,7 +31,17 @@ public sealed record GameTelemetryReading(
     int Port,
     string Status);
 
+public sealed record GameSetupState(
+    string Status,
+    bool ConfigFound,
+    bool Configured,
+    bool CanConfigure,
+    string[] ConfigPaths,
+    string[] BackupPaths,
+    string Message);
+
 public sealed record GameIntegrationSnapshot(
     GameIntegrationSettings Settings,
     GameIntegrationDescriptor[] Games,
-    GameTelemetryReading Telemetry);
+    GameTelemetryReading Telemetry,
+    GameSetupState Setup);

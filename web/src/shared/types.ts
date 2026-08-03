@@ -133,8 +133,19 @@ export type GameTelemetryReading = {
   status: string;
 };
 
+export type GameSetupState = {
+  status: "not-found" | "needs-configuration" | "configured" | "unreadable";
+  configFound: boolean;
+  configured: boolean;
+  canConfigure: boolean;
+  configPaths: string[];
+  backupPaths: string[];
+  message: string;
+};
+
 export type GameIntegrationSnapshot = {
   settings: GameIntegrationSettings;
   games: GameIntegrationDescriptor[];
   telemetry: GameTelemetryReading;
+  setup: GameSetupState;
 };

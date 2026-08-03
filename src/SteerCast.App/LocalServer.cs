@@ -186,6 +186,29 @@ public sealed class LocalServer(
             return;
         }
 
+        if (method == "POST" && path == "/api/game-integrations/dirt-rally-2/configure")
+        {
+            try
+            {
+                await SendJsonAsync(
+                    context,
+                    gameIntegrations.ConfigureSelectedGame(),
+                    AppJsonContext.Default.GameIntegrationSnapshot,
+                    200,
+                    cancellationToken);
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or IOException or UnauthorizedAccessException or System.Xml.XmlException)
+            {
+                await SendJsonAsync(
+                    context,
+                    new ErrorResponse(exception.Message),
+                    AppJsonContext.Default.ErrorResponse,
+                    409,
+                    cancellationToken);
+            }
+            return;
+        }
+
         if (method == "POST" && path == "/api/devices/refresh")
         {
             inputSource.Refresh();

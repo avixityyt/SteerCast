@@ -52,6 +52,7 @@ internal static class Program
 [JsonSerializable(typeof(GameIntegrationSettings))]
 [JsonSerializable(typeof(GameIntegrationDescriptor[]))]
 [JsonSerializable(typeof(GameTelemetryReading))]
+[JsonSerializable(typeof(GameSetupState))]
 [JsonSerializable(typeof(GameIntegrationSnapshot))]
 [JsonSerializable(typeof(CalibrationRequest))]
 [JsonSerializable(typeof(AxisCalibration))]

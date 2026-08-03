@@ -35,6 +35,7 @@ export default function App() {
   const [appVersion, setAppVersion] = useState("dev");
   const [gameIntegration, setGameIntegration] = useState<GameIntegrationSnapshot | null>(null);
   const [integrationSaving, setIntegrationSaving] = useState(false);
+  const [setupSaving, setSetupSaving] = useState(false);
   const [dragging, setDragging] = useState<DragState | null>(null);
   const [calibrating, setCalibrating] = useState<string | null>(null);
   const [showLaunchSplash, setShowLaunchSplash] = useState(() => new URLSearchParams(location.search).has("launch"));
@@ -127,6 +128,38 @@ export default function App() {
       await loadGameIntegration().catch(() => undefined);
     } finally {
       setIntegrationSaving(false);
+    }
+  }
+
+  async function configureDirtRally2() {
+    if (!gameIntegration || setupSaving) return;
+    setSetupSaving(true);
+    setStatus("Configuring DiRT Rally 2.0");
+    try {
+      const setupResponse = await fetch("/api/game-integrations/dirt-rally-2/configure", { method: "POST" });
+      if (!setupResponse.ok) {
+        const error = await setupResponse.json().catch(() => ({ message: "Automatic setup failed." }));
+        throw new Error(error.message);
+      }
+
+      let snapshot: GameIntegrationSnapshot = await setupResponse.json();
+      if (!snapshot.settings.enabled) {
+        const enableResponse = await fetch("/api/game-integrations", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ...snapshot.settings, enabled: true })
+        });
+        if (!enableResponse.ok) throw new Error("The listener could not be enabled.");
+        snapshot = await enableResponse.json();
+      }
+
+      setGameIntegration(snapshot);
+      setStatus("DiRT Rally 2.0 is ready for a connection");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Automatic setup failed.");
+      await loadGameIntegration().catch(() => undefined);
+    } finally {
+      setSetupSaving(false);
     }
   }
 
@@ -606,6 +639,60 @@ export default function App() {
                     </select>
                   </Field>
 
+                  <section class="game-setup-assistant" aria-labelledby="game-setup-heading">
+                    <div class="game-setup-heading">
+                      <div>
+                        <h3 id="game-setup-heading">Quick setup</h3>
+                        <p>Usually takes less than two minutes.</p>
+                      </div>
+                      <span class={`setup-state ${gameIntegration.telemetry.available ? "complete" : ""}`}>
+                        {gameIntegration.telemetry.available ? "Live" : gameIntegration.setup.configured ? "Configured" : "Setup needed"}
+                      </span>
+                    </div>
+
+                    <ol class="game-setup-steps">
+                      <li class={gameIntegration.setup.configFound ? "complete" : "current"}>
+                        <span aria-hidden="true">{gameIntegration.setup.configFound ? "✓" : "1"}</span>
+                        <div>
+                          <strong>Find the game</strong>
+                          <p>{gameIntegration.setup.message}</p>
+                          {gameIntegration.setup.configPaths[0] && <code title={gameIntegration.setup.configPaths[0]}>{gameIntegration.setup.configPaths[0]}</code>}
+                        </div>
+                      </li>
+                      <li class={gameIntegration.setup.configured ? "complete" : gameIntegration.setup.configFound ? "current" : ""}>
+                        <span aria-hidden="true">{gameIntegration.setup.configured ? "✓" : "2"}</span>
+                        <div>
+                          <strong>Enable local UDP output</strong>
+                          <p>{gameIntegration.setup.configured ? "The game will send telemetry only to this computer." : "Close DiRT Rally 2.0 first. SteerCast will create a backup before changing the UDP setting."}</p>
+                          {gameIntegration.setup.backupPaths.length > 0 && <p class="backup-note">Backup created beside the original configuration.</p>}
+                        </div>
+                      </li>
+                      <li class={gameIntegration.telemetry.available ? "complete" : gameIntegration.setup.configured && gameIntegration.settings.enabled ? "current" : ""}>
+                        <span aria-hidden="true">{gameIntegration.telemetry.available ? "✓" : "3"}</span>
+                        <div>
+                          <strong>Start a stage</strong>
+                          <p>{gameIntegration.telemetry.available ? "Connection confirmed. Derived load is ready for the overlay." : gameIntegration.settings.enabled ? "Open the game and begin a stage. SteerCast will confirm the first packet automatically." : "Enable the listener, then open the game and begin a stage."}</p>
+                        </div>
+                      </li>
+                    </ol>
+
+                    {!gameIntegration.setup.configFound ? (
+                      <button class="full-button" disabled={setupSaving} onClick={() => void loadGameIntegration().catch(() => setStatus("The game configuration could not be checked."))}>
+                        Check again
+                      </button>
+                    ) : !gameIntegration.telemetry.available && (!gameIntegration.setup.configured || !gameIntegration.settings.enabled) ? (
+                      <button
+                        class="full-button primary setup-action"
+                        disabled={setupSaving || integrationSaving || !gameIntegration.setup.canConfigure}
+                        aria-busy={setupSaving}
+                        onClick={() => void configureDirtRally2()}
+                      >
+                        {setupSaving && <span class="button-spinner" aria-hidden="true"></span>}
+                        <span>{gameIntegration.setup.configured ? "Enable and test" : "I’ve closed the game — Configure"}</span>
+                      </button>
+                    ) : null}
+                  </section>
+
                   <div class="integration-control-row">
                     <div>
                       <strong>Enable integration</strong>
@@ -662,12 +749,13 @@ export default function App() {
                   </section>
 
                   <details class="integration-setup">
-                    <summary>Connect DiRT Rally 2.0</summary>
+                    <summary>Manual setup and recovery</summary>
                     <ol>
                       <li>Close the game.</li>
                       <li>Edit <code>Documents\My Games\DiRT Rally 2.0\hardwaresettings\hardware_settings_config.xml</code>.</li>
                       <li>Set <code>{`<udp enabled="true" extradata="3" ip="127.0.0.1" port="${selectedGame?.port ?? 20777}" delay="1" />`}</code>.</li>
                       <li>Save the file, restart the game, then begin a stage.</li>
+                      <li>If needed, restore the file ending in <code>.steercast-backup</code>.</li>
                     </ol>
                   </details>
 

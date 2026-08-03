@@ -11,7 +11,7 @@ public sealed class GameIntegrationManagerTests : IDisposable
     public async Task PersistsDisabledIntegrationSettings()
     {
         var path = Path.Combine(_directory, "game-integration.json");
-        using (var manager = new GameIntegrationManager(path))
+        using (var manager = new GameIntegrationManager(path, _directory))
         {
             var snapshot = await manager.UpdateAsync(new GameIntegrationSettings(false, "dirt-rally-2", false));
             Assert.False(snapshot.Settings.Enabled);
@@ -19,7 +19,7 @@ public sealed class GameIntegrationManagerTests : IDisposable
             Assert.Equal("derived-telemetry", snapshot.Games.Single().SignalKind);
         }
 
-        using var reloaded = new GameIntegrationManager(path);
+        using var reloaded = new GameIntegrationManager(path, _directory);
         Assert.False(reloaded.Snapshot.Settings.Enabled);
         Assert.False(reloaded.Snapshot.Settings.ShowOnOverlay);
     }
@@ -27,7 +27,7 @@ public sealed class GameIntegrationManagerTests : IDisposable
     [Fact]
     public async Task RejectsUnknownGameAdapters()
     {
-        using var manager = new GameIntegrationManager(Path.Combine(_directory, "game-integration.json"));
+        using var manager = new GameIntegrationManager(Path.Combine(_directory, "game-integration.json"), _directory);
         await Assert.ThrowsAsync<ArgumentException>(() =>
             manager.UpdateAsync(new GameIntegrationSettings(true, "unknown-game", true)));
     }
