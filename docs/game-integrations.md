@@ -38,6 +38,13 @@ effect remains visible while the wheel angle is steady because slip and yaw are
 still active. It cannot distinguish motor movement from the driver's hands and
 must not be labelled force feedback.
 
+The Games panel can record a 30-second local tuning sample. Capture subscribes
+to the existing input stream, stores at most 20 samples per second, and performs
+no additional device or game polling. Files are written to
+`%LOCALAPPDATA%\SteerCast\captures` and contain steering, pedal, derived load,
+speed, slip-angle, and yaw-rate values. Capture files are local diagnostics and
+must not be committed.
+
 If automatic setup is unavailable, close the game and edit:
 
 `Documents\My Games\DiRT Rally 2.0\hardwaresettings\hardware_settings_config.xml`

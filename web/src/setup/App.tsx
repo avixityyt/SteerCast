@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import type { DeviceDescriptor, GameIntegrationSettings, GameIntegrationSnapshot, HealthResponse, OverlayElement, OverlayProfile, RawDeviceReading } from "../shared/types";
+import type { DeviceDescriptor, GameIntegrationSettings, GameIntegrationSnapshot, HealthResponse, OverlayElement, OverlayProfile, RawDeviceReading, TelemetryCaptureStatus } from "../shared/types";
 import {
   axisRows,
   elementNames,
@@ -34,7 +34,9 @@ export default function App() {
   const [status, setStatus] = useState("Loading");
   const [appVersion, setAppVersion] = useState("dev");
   const [gameIntegration, setGameIntegration] = useState<GameIntegrationSnapshot | null>(null);
+  const [telemetryCapture, setTelemetryCapture] = useState<TelemetryCaptureStatus | null>(null);
   const [integrationSaving, setIntegrationSaving] = useState(false);
+  const [captureSaving, setCaptureSaving] = useState(false);
   const [setupSaving, setSetupSaving] = useState(false);
   const [dragging, setDragging] = useState<DragState | null>(null);
   const [calibrating, setCalibrating] = useState<string | null>(null);
@@ -52,8 +54,10 @@ export default function App() {
 
   useEffect(() => {
     if (panel !== "games") return;
-    void loadGameIntegration().catch(() => undefined);
-    const timer = window.setInterval(() => void loadGameIntegration().catch(() => undefined), 1000);
+    void Promise.all([loadGameIntegration(), loadTelemetryCapture()]).catch(() => undefined);
+    const timer = window.setInterval(() => {
+      void Promise.all([loadGameIntegration(), loadTelemetryCapture()]).catch(() => undefined);
+    }, 1000);
     return () => window.clearInterval(timer);
   }, [panel]);
 
@@ -90,7 +94,7 @@ export default function App() {
 
   async function initialize() {
     try {
-      await Promise.all([loadProfiles(), loadDevices(), loadHealth(), loadGameIntegration()]);
+      await Promise.all([loadProfiles(), loadDevices(), loadHealth(), loadGameIntegration(), loadTelemetryCapture()]);
     } catch {
       setStatus("SteerCast could not load its local settings. Restart the app.");
     }
@@ -107,6 +111,38 @@ export default function App() {
     const response = await fetch("/api/game-integrations", { cache: "no-store" });
     if (!response.ok) throw new Error("Could not load game integrations");
     setGameIntegration(await response.json());
+  }
+
+  async function loadTelemetryCapture() {
+    const response = await fetch("/api/telemetry-capture", { cache: "no-store" });
+    if (!response.ok) throw new Error("Could not load telemetry capture status");
+    setTelemetryCapture(await response.json());
+  }
+
+  async function toggleTelemetryCapture() {
+    if (!telemetryCapture || captureSaving) return;
+    const wasRecording = telemetryCapture.recording;
+    setCaptureSaving(true);
+    setStatus(wasRecording ? "Saving driving sample" : "Starting driving sample");
+    try {
+      const response = await fetch(
+        wasRecording ? "/api/telemetry-capture/stop" : "/api/telemetry-capture/start",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: wasRecording ? undefined : JSON.stringify({ profileId: selectedId, durationSeconds: 30 })
+        }
+      );
+      if (!response.ok) throw new Error();
+      const next: TelemetryCaptureStatus = await response.json();
+      setTelemetryCapture(next);
+      setStatus(next.recording ? "Driving sample recording" : next.message);
+    } catch {
+      setStatus(wasRecording ? "Driving sample could not be saved." : "Driving sample could not be started.");
+      await loadTelemetryCapture().catch(() => undefined);
+    } finally {
+      setCaptureSaving(false);
+    }
   }
 
   async function updateGameIntegration(patch: Partial<GameIntegrationSettings>) {
@@ -746,6 +782,30 @@ export default function App() {
                         <span></span>
                       </label>
                     </div>
+                  </section>
+
+                  <section class="integration-section capture-section" aria-labelledby="capture-heading">
+                    <div class="integration-section-heading">
+                      <h3 id="capture-heading">Driving sample</h3>
+                      <span class="sample-rate-badge">20 Hz max</span>
+                    </div>
+                    <p>Record 30 seconds of steering, pedals, slip, and yaw from the existing stream. No extra wheel or game polling.</p>
+                    <button
+                      class={`full-button ${telemetryCapture?.recording ? "recording" : ""}`}
+                      disabled={captureSaving || (!telemetryCapture?.recording && !gameIntegration.telemetry.available)}
+                      aria-busy={captureSaving}
+                      onClick={() => void toggleTelemetryCapture()}
+                    >
+                      {captureSaving && <span class="button-spinner" aria-hidden="true"></span>}
+                      <span>{telemetryCapture?.recording ? `Stop and save (${telemetryCapture.remainingSeconds}s)` : "Record 30-second sample"}</span>
+                    </button>
+                    <p class="capture-status" role="status" aria-live="polite">
+                      {telemetryCapture?.message ?? "Loading capture controls…"}
+                      {telemetryCapture?.recording ? ` ${telemetryCapture.sampleCount} samples.` : ""}
+                    </p>
+                    {telemetryCapture?.latestFile && !telemetryCapture.recording && (
+                      <code class="capture-path" title={telemetryCapture.latestFile}>{telemetryCapture.latestFile}</code>
+                    )}
                   </section>
 
                   <details class="integration-setup">

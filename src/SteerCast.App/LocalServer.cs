@@ -13,7 +13,8 @@ public sealed class LocalServer(
     ProfileStore profileStore,
     IWheelInputSource inputSource,
     InputBroadcaster broadcaster,
-    GameIntegrationManager gameIntegrations) : IAsyncDisposable
+    GameIntegrationManager gameIntegrations,
+    TelemetryCaptureService telemetryCapture) : IAsyncDisposable
 {
     private readonly HttpListener _listener = new();
     private readonly CancellationTokenSource _stopping = new();
@@ -142,6 +143,43 @@ public sealed class LocalServer(
                 context,
                 gameIntegrations.Snapshot,
                 AppJsonContext.Default.GameIntegrationSnapshot,
+                200,
+                cancellationToken);
+            return;
+        }
+
+        if (method == "GET" && path == "/api/telemetry-capture")
+        {
+            await SendJsonAsync(
+                context,
+                telemetryCapture.Status,
+                AppJsonContext.Default.TelemetryCaptureStatus,
+                200,
+                cancellationToken);
+            return;
+        }
+
+        if (method == "POST" && path == "/api/telemetry-capture/start")
+        {
+            var request = await JsonSerializer.DeserializeAsync(
+                context.Request.InputStream,
+                AppJsonContext.Default.TelemetryCaptureRequest,
+                cancellationToken) ?? new TelemetryCaptureRequest();
+            await SendJsonAsync(
+                context,
+                telemetryCapture.Start(request),
+                AppJsonContext.Default.TelemetryCaptureStatus,
+                200,
+                cancellationToken);
+            return;
+        }
+
+        if (method == "POST" && path == "/api/telemetry-capture/stop")
+        {
+            await SendJsonAsync(
+                context,
+                await telemetryCapture.StopAsync(),
+                AppJsonContext.Default.TelemetryCaptureStatus,
                 200,
                 cancellationToken);
             return;

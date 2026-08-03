@@ -23,7 +23,8 @@ internal static class Program
         using var gameIntegrations = new GameIntegrationManager();
         using var inputSource = new WindowsWheelInputSource();
         await using var broadcaster = new InputBroadcaster(inputSource, profileStore, gameIntegrations);
-        await using var server = new LocalServer(Port, profileStore, inputSource, broadcaster, gameIntegrations);
+        await using var telemetryCapture = new TelemetryCaptureService(broadcaster, gameIntegrations);
+        await using var server = new LocalServer(Port, profileStore, inputSource, broadcaster, gameIntegrations, telemetryCapture);
         server.Start();
         var alwaysOnTop = args.Contains("--always-on-top", StringComparer.OrdinalIgnoreCase);
 
@@ -54,6 +55,10 @@ internal static class Program
 [JsonSerializable(typeof(GameTelemetryReading))]
 [JsonSerializable(typeof(GameSetupState))]
 [JsonSerializable(typeof(GameIntegrationSnapshot))]
+[JsonSerializable(typeof(TelemetryCaptureRequest))]
+[JsonSerializable(typeof(TelemetryCaptureStatus))]
+[JsonSerializable(typeof(TelemetryCaptureSample[]))]
+[JsonSerializable(typeof(TelemetryCaptureDocument))]
 [JsonSerializable(typeof(CalibrationRequest))]
 [JsonSerializable(typeof(AxisCalibration))]
 [JsonSerializable(typeof(HealthResponse))]

@@ -155,3 +155,13 @@ export type GameIntegrationSnapshot = {
   telemetry: GameTelemetryReading;
   setup: GameSetupState;
 };
+
+export type TelemetryCaptureStatus = {
+  recording: boolean;
+  startedAt: number;
+  durationSeconds: number;
+  remainingSeconds: number;
+  sampleCount: number;
+  latestFile?: string | null;
+  message: string;
+};

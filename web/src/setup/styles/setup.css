@@ -582,6 +582,37 @@ summary:focus-visible {
   font-family: Consolas, monospace;
   font-size: 9px;
 }
+.sample-rate-badge {
+  padding: 3px 7px;
+  color: #aebcb6;
+  border: 1px solid color-mix(in srgb, var(--mist) 34%, transparent);
+  border-radius: 999px;
+  font-family: Consolas, monospace;
+  font-size: 9px;
+}
+.capture-section .full-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+.capture-section .full-button.recording {
+  color: #f2d7d8;
+  border-color: color-mix(in srgb, var(--rose) 58%, transparent);
+  background: color-mix(in srgb, var(--rose) 12%, #14110f);
+}
+.capture-status { overflow-wrap: anywhere; }
+.capture-path {
+  display: block;
+  max-width: 100%;
+  margin-top: var(--space-sm);
+  color: #919da4;
+  font-family: Consolas, monospace;
+  font-size: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .signal-name { display: block; margin-top: var(--space-md); color: var(--ice); font-size: 12px; }
 .integration-meter { height: 6px; margin-top: var(--space-lg); overflow: hidden; border-radius: 999px; background: #0e0d0b; }
 .integration-meter span {

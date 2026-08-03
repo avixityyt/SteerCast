@@ -61,11 +61,11 @@ public sealed class GameIntegrationManager : IDisposable
         }
     }
 
-    public InputFrame Apply(InputFrame frame)
+    public InputFrame Apply(InputFrame frame, bool includeWhenOverlayHidden = false)
     {
         lock (_sync)
         {
-            if (!_settings.Enabled || !_settings.ShowOnOverlay) return frame;
+            if (!_settings.Enabled || (!_settings.ShowOnOverlay && !includeWhenOverlayHidden)) return frame;
 
             var reading = CurrentReading();
             return !reading.Available

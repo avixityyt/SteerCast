@@ -24,6 +24,9 @@ test("setup loads the saved profile and OBS URL", async ({ page }) => {
   await expect(page.getByLabel("Enable game integration")).toBeAttached();
   await expect(page.getByText("Not FFB", { exact: true })).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "Derived steering demand" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Driving sample" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Record 30-second sample|Stop and save/ })).toBeVisible();
+  await expect(page.getByText("No extra wheel or game polling.", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "Layout" }).click();
   await expect(page.getByRole("button", { name: "Reset module positions" })).toBeVisible();
   await page.getByRole("button", { name: "Appearance" }).click();
