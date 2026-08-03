@@ -193,7 +193,8 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
   expect(throttleRail!.height).toBeGreaterThan(throttleRail!.width * 5);
   await expect(page.locator(".feedback-readout")).toHaveCount(0);
   await expect(page.locator("#game-telemetry")).toBeVisible();
-  await expect(page.getByText("Load", { exact: true })).toBeVisible();
+  await expect(page.getByText("FFB*", { exact: true })).toBeVisible();
+  await expect(page.getByTitle("Derived estimate—not measured force feedback")).toBeVisible();
   await expect(page.locator("#steering-interaction-label")).toHaveCount(0);
   await expect(page.locator("#steering-interaction-value")).not.toHaveText("0%");
 
@@ -213,18 +214,24 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
   };
   await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), correctionFrame);
   await page.waitForFunction(() => (document.getElementById("wheel") as HTMLElement).style.transform.includes("rotate(-"));
-  await expect(page.locator("#game-telemetry")).not.toHaveClass(/countersteering/);
+  await expect(page.locator("#game-telemetry")).not.toHaveClass(/force-active/);
 
   const heldCountersteerFrame = { ...correctionFrame, sequence: 16, timestamp: frame.timestamp + 550 };
   await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), heldCountersteerFrame);
-  await expect(page.locator("#game-telemetry")).toHaveClass(/countersteering/);
+  await expect(page.locator("#game-telemetry")).toHaveClass(/force-active/);
   const heldWheelVisual = await page.locator("#wheel").evaluate((element) => ({
-    shadow: (element as HTMLElement).style.getPropertyValue("--countersteer-shadow"),
+    shadow: (element as HTMLElement).style.getPropertyValue("--force-shadow"),
     transform: (element as HTMLElement).style.transform
   }));
   expect(heldWheelVisual.shadow).toContain("rgb(242 198 109");
   expect(heldWheelVisual.shadow).not.toContain("/ 0)");
-  expect(heldWheelVisual.transform).toMatch(/translate3d\(-[1-3](?:\.\d+)?px, 0px, 0px\) rotate\(-\d+(?:\.\d+)?deg\)/);
+  expect(heldWheelVisual.transform).toMatch(/translate3d\([2-7](?:\.\d+)?px, 0px, 0px\) rotate\(-\d+(?:\.\d+)?deg\)/);
+  const forceCueVisual = await page.locator("#wheel-force-cue").evaluate((element) => ({
+    opacity: (element as HTMLElement).style.opacity,
+    transform: (element as HTMLElement).style.transform
+  }));
+  expect(Number(forceCueVisual.opacity)).toBeGreaterThan(0.38);
+  expect(forceCueVisual.transform).toMatch(/translate3d\(1\d{2}(?:\.\d+)?px, 0px, 0px\) scaleX\(1\)/);
 
   for (let index = 17; index <= 20; index += 1) {
     const microCorrectionFrame = {
@@ -236,15 +243,15 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
     await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), microCorrectionFrame);
     await page.waitForTimeout(20);
   }
-  await expect(page.locator("#game-telemetry")).toHaveClass(/countersteering/);
+  await expect(page.locator("#game-telemetry")).toHaveClass(/force-active/);
 
   const yawReleaseFrame = { ...correctionFrame, sequence: 21, timestamp: frame.timestamp + 800, steering: -0.36, gameTelemetryYawRate: 0 };
   await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), yawReleaseFrame);
-  await expect(page.locator("#game-telemetry")).toHaveClass(/countersteering/);
+  await expect(page.locator("#game-telemetry")).toHaveClass(/force-active/);
 
   const settledReleaseFrame = { ...yawReleaseFrame, sequence: 22, timestamp: frame.timestamp + 1050 };
   await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), settledReleaseFrame);
-  await expect(page.locator("#game-telemetry")).not.toHaveClass(/countersteering/);
+  await expect(page.locator("#game-telemetry")).not.toHaveClass(/force-active/);
 });
 
 test("setup remains usable at a narrow desktop width", async ({ page }) => {

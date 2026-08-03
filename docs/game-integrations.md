@@ -30,15 +30,17 @@ completion only after a telemetry packet arrives during a stage.
 
 ### Derived steering interaction
 
-When DiRT telemetry is available, the overlay learns steering/yaw sign polarity
-during low-slip grip driving. One `LOAD` pill shows demand from vehicle physics.
-During a slide, holding the wheel opposite the calibrated yaw direction adds a
-directional amber tension glow and a subtle deflection to the wheel image. The
-effect remains visible while the wheel angle is steady because slip and yaw are
-still active. Counter-load is confirmed over several frames, uses continuous
-steering stability so small driver corrections do not cause flicker, and has a
-short release tail. It cannot distinguish motor movement from the driver's
-hands and must not be labelled force feedback.
+When DiRT telemetry is available, one `FFB*` pill shows demand from vehicle
+physics; the asterisk means it is a derived estimate, not measured FFB. During
+a slide, SteerCast estimates the steering angle that would align
+the car with its direction of travel from slip angle, then compares that target
+with the actual held wheel angle. A directional amber cue, wheel glow, and
+visible wheel deflection point toward the estimated aligning-force direction.
+The cue remains active when the wheel is motionless but vehicle physics would
+continue pushing it toward or beyond steering lock. Small driver corrections
+are treated continuously and a short release tail prevents flicker. This is an
+estimate and cannot distinguish motor movement from the driver's hands; it must
+not be labelled force feedback.
 
 The Games panel can record a 30-second local tuning sample. Capture subscribes
 to the existing input stream, stores at most 20 samples per second, and performs

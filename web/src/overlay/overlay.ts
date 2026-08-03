@@ -7,6 +7,7 @@ const profileId = document.body.dataset.profile ?? "default";
 const isPreview = new URLSearchParams(location.search).has("preview");
 const overlay = required<HTMLElement>("overlay");
 const wheel = required<HTMLElement>("wheel");
+const wheelForceCue = required<HTMLElement>("wheel-force-cue");
 const steeringIndicator = required<HTMLElement>("steering-indicator");
 const pedalImages = {
   clutch: required<HTMLImageElement>("pedal-image-clutch"),
@@ -102,7 +103,7 @@ function renderLoop() {
 function applyFrame(frame: InputFrame) {
   if (!frame.connected) {
     interactionTracker.reset();
-    resetCountersteerVisual();
+    resetForceVisual();
     setConnection("Wheel disconnected", true);
     return;
   }
@@ -132,7 +133,7 @@ function setGameTelemetry(frame: InputFrame): number {
   gameTelemetry.hidden = !visible;
   if (!visible) {
     interactionTracker.reset();
-    resetCountersteerVisual();
+    resetForceVisual();
     return 0;
   }
 
@@ -146,29 +147,34 @@ function setGameTelemetry(frame: InputFrame): number {
   });
   steeringInteractionFill.style.transform = `scaleX(${interaction.score})`;
   steeringInteractionValue.value = `${Math.round(interaction.score * 100)}%`;
-  gameTelemetry.classList.toggle("countersteering", interaction.countersteering);
+  gameTelemetry.classList.toggle("force-active", interaction.forceActive);
 
-  if (!interaction.countersteering) {
-    wheel.style.setProperty("--countersteer-shadow", "drop-shadow(0 0 0 rgb(242 198 109 / 0))");
+  if (!interaction.forceActive) {
+    wheel.style.setProperty("--force-shadow", "drop-shadow(0 0 0 rgb(242 198 109 / 0))");
+    wheelForceCue.style.opacity = "0";
     return 0;
   }
 
-  const visualStrength = interaction.counterIntensity;
-  const shadowOffset = interaction.counterDirection * (4 + visualStrength * 7);
-  const shadowBlur = 5 + visualStrength * 8;
-  const shadowAlpha = 0.20 + visualStrength * 0.50;
+  const visualStrength = interaction.forceIntensity;
+  const shadowOffset = interaction.forceDirection * (8 + visualStrength * 12);
+  const shadowBlur = 8 + visualStrength * 10;
+  const shadowAlpha = 0.30 + visualStrength * 0.55;
   wheel.style.setProperty(
-    "--countersteer-shadow",
+    "--force-shadow",
     `drop-shadow(${shadowOffset.toFixed(2)}px 0 ${shadowBlur.toFixed(2)}px rgb(242 198 109 / ${shadowAlpha.toFixed(3)}))`
   );
+  const cueTravel = interaction.forceDirection * (160 + visualStrength * 5);
+  wheelForceCue.style.transform = `translate3d(${cueTravel.toFixed(2)}px, 0, 0) scaleX(${interaction.forceDirection})`;
+  wheelForceCue.style.opacity = String(0.38 + visualStrength * 0.62);
 
-  const travel = 0.7 + interaction.counterIntensity * 2.3;
-  return Number((interaction.counterDirection * travel).toFixed(2));
+  const travel = 2 + interaction.forceIntensity * 5;
+  return Number((interaction.forceDirection * travel).toFixed(2));
 }
 
-function resetCountersteerVisual() {
-  gameTelemetry.classList.remove("countersteering");
-  wheel.style.setProperty("--countersteer-shadow", "drop-shadow(0 0 0 rgb(242 198 109 / 0))");
+function resetForceVisual() {
+  gameTelemetry.classList.remove("force-active");
+  wheel.style.setProperty("--force-shadow", "drop-shadow(0 0 0 rgb(242 198 109 / 0))");
+  wheelForceCue.style.opacity = "0";
 }
 
 function setPedal(element: HTMLElement, assetImage: HTMLElement, value: number) {
