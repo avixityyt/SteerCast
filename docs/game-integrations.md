@@ -35,8 +35,10 @@ during low-slip grip driving. One `LOAD` pill shows demand from vehicle physics.
 During a slide, holding the wheel opposite the calibrated yaw direction adds a
 directional amber tension glow and a subtle deflection to the wheel image. The
 effect remains visible while the wheel angle is steady because slip and yaw are
-still active. It cannot distinguish motor movement from the driver's hands and
-must not be labelled force feedback.
+still active. Counter-load is confirmed over several frames, uses continuous
+steering stability so small driver corrections do not cause flicker, and has a
+short release tail. It cannot distinguish motor movement from the driver's
+hands and must not be labelled force feedback.
 
 The Games panel can record a 30-second local tuning sample. Capture subscribes
 to the existing input stream, stores at most 20 samples per second, and performs

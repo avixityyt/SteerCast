@@ -12,7 +12,6 @@ export type SteeringPhysics = {
 export type SteeringInteraction = {
   score: number;
   countersteering: boolean;
-  holdingCountersteer: boolean;
   counterDirection: -1 | 0 | 1;
   counterIntensity: number;
 };
@@ -23,7 +22,9 @@ export class SteeringInteractionTracker {
   private activity = 0;
   private yawCorrelation = 0;
   private calibrationWeight = 0;
-  private countersteerDuration = 0;
+  private counterEvidence = 0;
+  private counterTension = 0;
+  private counterDirection: -1 | 0 | 1 = 0;
 
   update(sample: SteeringPhysics): SteeringInteraction {
     const demand = clamp01(sample.demand);
@@ -54,7 +55,7 @@ export class SteeringInteractionTracker {
     const alignedYaw = sample.yawRate * yawPolarity;
     const calibrated = this.calibrationWeight >= 0.18;
     const sliding = sample.speed >= 5 && Math.abs(sample.slipAngle) >= 2.2 && Math.abs(alignedYaw) >= 0.06;
-    const countersteering = calibrated
+    const counterCandidate = calibrated
       && sliding
       && Math.abs(sample.steering) >= 0.045
       && Math.sign(sample.steering) !== Math.sign(alignedYaw);
@@ -63,28 +64,43 @@ export class SteeringInteractionTracker {
       && this.activity >= 0.14
       && Math.sign(steeringVelocity) === -Math.sign(alignedYaw);
 
-    this.countersteerDuration = countersteering
-      ? Math.min(1, this.countersteerDuration + elapsed)
-      : 0;
-    const holdingCountersteer = countersteering
-      && this.countersteerDuration >= 0.18
-      && rawActivity <= 0.08;
-
     const slipDemand = clamp01(Math.abs(sample.slipAngle) / 14);
     const yawDemand = clamp01(Math.abs(alignedYaw) / 0.8);
     const correctionBoost = activelyCorrecting ? this.activity * 0.12 : 0;
     const score = clamp01(demand * 0.86 + slipDemand * 0.10 + correctionBoost);
-    const counterIntensity = countersteering
-      ? clamp01(demand * 0.58 + slipDemand * 0.30 + yawDemand * 0.12)
+
+    // Confirm countersteer over time instead of reacting to one noisy sign
+    // crossing. Release slightly faster, but retain enough tail for a stable
+    // visual when yaw briefly approaches zero during recovery.
+    const evidenceTarget = counterCandidate ? 1 : 0;
+    const evidenceTimeConstant = counterCandidate ? 0.14 : 0.10;
+    this.counterEvidence += (evidenceTarget - this.counterEvidence)
+      * (1 - Math.exp(-elapsed / evidenceTimeConstant));
+    if (counterCandidate) {
+      this.counterDirection = Math.sign(sample.steering) as -1 | 1;
+    }
+
+    // Real held countersteer still contains small corrections. Convert wheel
+    // velocity into a continuous stability term rather than a brittle stopped
+    // or moving decision, then smooth the resulting tension.
+    const steeringStability = 1 - clamp01(Math.abs(steeringVelocity) / 0.9);
+    const physicsIntensity = clamp01(demand * 0.58 + slipDemand * 0.30 + yawDemand * 0.12);
+    const tensionTarget = counterCandidate
+      ? physicsIntensity * (0.35 + steeringStability * 0.65) * this.counterEvidence
       : 0;
-    const counterDirection = countersteering
-      ? Math.sign(sample.steering) as -1 | 1
-      : 0;
+    const tensionTimeConstant = tensionTarget > this.counterTension ? 0.16 : 0.12;
+    this.counterTension += (tensionTarget - this.counterTension)
+      * (1 - Math.exp(-elapsed / tensionTimeConstant));
+
+    const countersteering = this.counterEvidence >= (counterCandidate ? 0.55 : 0.25)
+      && this.counterTension >= 0.18;
+    const counterIntensity = countersteering ? clamp01(this.counterTension) : 0;
+    const counterDirection = countersteering ? this.counterDirection : 0;
 
     this.lastSteering = sample.steering;
     this.lastTimestamp = sampleTime;
 
-    return { score, countersteering, holdingCountersteer, counterDirection, counterIntensity };
+    return { score, countersteering, counterDirection, counterIntensity };
   }
 
   reset() {
@@ -93,6 +109,8 @@ export class SteeringInteractionTracker {
     this.activity = 0;
     this.yawCorrelation = 0;
     this.calibrationWeight = 0;
-    this.countersteerDuration = 0;
+    this.counterEvidence = 0;
+    this.counterTension = 0;
+    this.counterDirection = 0;
   }
 }

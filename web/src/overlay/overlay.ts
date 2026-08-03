@@ -147,31 +147,27 @@ function setGameTelemetry(frame: InputFrame): number {
   steeringInteractionFill.style.transform = `scaleX(${interaction.score})`;
   steeringInteractionValue.value = `${Math.round(interaction.score * 100)}%`;
   gameTelemetry.classList.toggle("countersteering", interaction.countersteering);
-  wheel.classList.toggle("holding-countersteer", interaction.holdingCountersteer);
 
   if (!interaction.countersteering) {
     wheel.style.setProperty("--countersteer-shadow", "drop-shadow(0 0 0 rgb(242 198 109 / 0))");
     return 0;
   }
 
-  const visualStrength = interaction.counterIntensity * (interaction.holdingCountersteer ? 1 : 0.72);
+  const visualStrength = interaction.counterIntensity;
   const shadowOffset = interaction.counterDirection * (4 + visualStrength * 7);
   const shadowBlur = 5 + visualStrength * 8;
-  const shadowAlpha = (interaction.holdingCountersteer ? 0.32 : 0.16) + visualStrength * 0.38;
+  const shadowAlpha = 0.20 + visualStrength * 0.50;
   wheel.style.setProperty(
     "--countersteer-shadow",
     `drop-shadow(${shadowOffset.toFixed(2)}px 0 ${shadowBlur.toFixed(2)}px rgb(242 198 109 / ${shadowAlpha.toFixed(3)}))`
   );
 
-  const travel = interaction.holdingCountersteer
-    ? 1.1 + interaction.counterIntensity * 1.9
-    : interaction.counterIntensity * 1.2;
+  const travel = 0.7 + interaction.counterIntensity * 2.3;
   return Number((interaction.counterDirection * travel).toFixed(2));
 }
 
 function resetCountersteerVisual() {
   gameTelemetry.classList.remove("countersteering");
-  wheel.classList.remove("holding-countersteer");
   wheel.style.setProperty("--countersteer-shadow", "drop-shadow(0 0 0 rgb(242 198 109 / 0))");
 }
 

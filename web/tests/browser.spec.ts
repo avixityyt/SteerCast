@@ -212,11 +212,12 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
     gameTelemetryYawRate: 0.5
   };
   await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), correctionFrame);
-  await expect(page.locator("#game-telemetry")).toHaveClass(/countersteering/);
+  await page.waitForFunction(() => (document.getElementById("wheel") as HTMLElement).style.transform.includes("rotate(-"));
+  await expect(page.locator("#game-telemetry")).not.toHaveClass(/countersteering/);
 
   const heldCountersteerFrame = { ...correctionFrame, sequence: 16, timestamp: frame.timestamp + 550 };
   await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), heldCountersteerFrame);
-  await expect(page.locator("#wheel")).toHaveClass(/holding-countersteer/);
+  await expect(page.locator("#game-telemetry")).toHaveClass(/countersteering/);
   const heldWheelVisual = await page.locator("#wheel").evaluate((element) => ({
     shadow: (element as HTMLElement).style.getPropertyValue("--countersteer-shadow"),
     transform: (element as HTMLElement).style.transform
@@ -224,6 +225,26 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
   expect(heldWheelVisual.shadow).toContain("rgb(242 198 109");
   expect(heldWheelVisual.shadow).not.toContain("/ 0)");
   expect(heldWheelVisual.transform).toMatch(/translate3d\(-[1-3](?:\.\d+)?px, 0px, 0px\) rotate\(-\d+(?:\.\d+)?deg\)/);
+
+  for (let index = 17; index <= 20; index += 1) {
+    const microCorrectionFrame = {
+      ...correctionFrame,
+      sequence: index,
+      timestamp: frame.timestamp + 550 + (index - 16) * 50,
+      steering: -0.4 + (index - 16) * 0.01
+    };
+    await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), microCorrectionFrame);
+    await page.waitForTimeout(20);
+  }
+  await expect(page.locator("#game-telemetry")).toHaveClass(/countersteering/);
+
+  const yawReleaseFrame = { ...correctionFrame, sequence: 21, timestamp: frame.timestamp + 800, steering: -0.36, gameTelemetryYawRate: 0 };
+  await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), yawReleaseFrame);
+  await expect(page.locator("#game-telemetry")).toHaveClass(/countersteering/);
+
+  const settledReleaseFrame = { ...yawReleaseFrame, sequence: 22, timestamp: frame.timestamp + 1050 };
+  await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), settledReleaseFrame);
+  await expect(page.locator("#game-telemetry")).not.toHaveClass(/countersteering/);
 });
 
 test("setup remains usable at a narrow desktop width", async ({ page }) => {
