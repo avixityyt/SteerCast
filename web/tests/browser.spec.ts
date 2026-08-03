@@ -190,7 +190,8 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
   expect(throttleRail!.height).toBeGreaterThan(throttleRail!.width * 5);
   await expect(page.locator(".feedback-readout")).toHaveCount(0);
   await expect(page.locator("#game-telemetry")).toBeVisible();
-  await expect(page.locator("#game-telemetry")).toHaveAttribute("data-state", "loaded");
+  await expect(page.getByText("Load", { exact: true })).toBeVisible();
+  await expect(page.locator("#steering-interaction-label")).toHaveCount(0);
   await expect(page.locator("#steering-interaction-value")).not.toHaveText("0%");
 
   for (let index = 2; index <= 14; index += 1) {
@@ -208,12 +209,18 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
     gameTelemetryYawRate: 0.5
   };
   await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), correctionFrame);
-  await expect(page.locator("#steering-interaction-label")).toHaveText("Correcting");
+  await expect(page.locator("#game-telemetry")).toHaveClass(/countersteering/);
 
   const heldCountersteerFrame = { ...correctionFrame, sequence: 16, timestamp: frame.timestamp + 550 };
   await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), heldCountersteerFrame);
-  await expect(page.locator("#steering-interaction-label")).toHaveText("Countersteer");
-  await expect(page.locator("#game-telemetry")).toHaveAttribute("data-state", "countersteer");
+  await expect(page.locator("#wheel")).toHaveClass(/holding-countersteer/);
+  const heldWheelVisual = await page.locator("#wheel").evaluate((element) => ({
+    shadow: (element as HTMLElement).style.getPropertyValue("--countersteer-shadow"),
+    transform: (element as HTMLElement).style.transform
+  }));
+  expect(heldWheelVisual.shadow).toContain("rgb(242 198 109");
+  expect(heldWheelVisual.shadow).not.toContain("/ 0)");
+  expect(heldWheelVisual.transform).toMatch(/translate3d\(-[1-3](?:\.\d+)?px, 0px, 0px\) rotate\(-\d+(?:\.\d+)?deg\)/);
 });
 
 test("setup remains usable at a narrow desktop width", async ({ page }) => {

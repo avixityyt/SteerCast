@@ -16,7 +16,6 @@ const pedalImages = {
 const shifterImage = required<HTMLImageElement>("shifter-image");
 const steeringValue = required<HTMLOutputElement>("steering-value");
 const gameTelemetry = required<HTMLElement>("game-telemetry");
-const steeringInteractionLabel = required<HTMLOutputElement>("steering-interaction-label");
 const steeringInteractionFill = required<HTMLElement>("steering-interaction-fill");
 const steeringInteractionValue = required<HTMLOutputElement>("steering-interaction-value");
 const gear = required<HTMLOutputElement>("gear");
@@ -103,16 +102,17 @@ function renderLoop() {
 function applyFrame(frame: InputFrame) {
   if (!frame.connected) {
     interactionTracker.reset();
+    resetCountersteerVisual();
     setConnection("Wheel disconnected", true);
     return;
   }
 
   setConnection("", false);
   const degrees = frame.steering * (profile.wheelRotationDegrees / 2);
-  wheel.style.transform = `rotate(${degrees}deg)`;
+  const deflection = setGameTelemetry(frame);
+  wheel.style.transform = `translate3d(${deflection}px, 0, 0) rotate(${degrees}deg)`;
   steeringIndicator.style.transform = `translate3d(${frame.steering * 84}px, 0, 0)`;
   steeringValue.value = `${Math.round(degrees)} degrees`;
-  setGameTelemetry(frame);
   setPedal(pedalChannels.clutch, pedalImages.clutch, frame.clutch);
   setPedal(pedalChannels.brake, pedalImages.brake, frame.brake);
   setPedal(pedalChannels.throttle, pedalImages.throttle, frame.throttle);
@@ -127,12 +127,13 @@ function applyFrame(frame: InputFrame) {
   }
 }
 
-function setGameTelemetry(frame: InputFrame) {
+function setGameTelemetry(frame: InputFrame): number {
   const visible = frame.gameTelemetryKind === "derived-telemetry" && Number.isFinite(frame.gameTelemetryStrength);
   gameTelemetry.hidden = !visible;
   if (!visible) {
     interactionTracker.reset();
-    return;
+    resetCountersteerVisual();
+    return 0;
   }
 
   const interaction = interactionTracker.update({
@@ -143,10 +144,35 @@ function setGameTelemetry(frame: InputFrame) {
     yawRate: frame.gameTelemetryYawRate ?? 0,
     timestamp: frame.timestamp
   });
-  gameTelemetry.dataset.state = interaction.state;
-  steeringInteractionLabel.value = interaction.label;
   steeringInteractionFill.style.transform = `scaleX(${interaction.score})`;
   steeringInteractionValue.value = `${Math.round(interaction.score * 100)}%`;
+  gameTelemetry.classList.toggle("countersteering", interaction.countersteering);
+  wheel.classList.toggle("holding-countersteer", interaction.holdingCountersteer);
+
+  if (!interaction.countersteering) {
+    wheel.style.setProperty("--countersteer-shadow", "drop-shadow(0 0 0 rgb(242 198 109 / 0))");
+    return 0;
+  }
+
+  const visualStrength = interaction.counterIntensity * (interaction.holdingCountersteer ? 1 : 0.72);
+  const shadowOffset = interaction.counterDirection * (4 + visualStrength * 7);
+  const shadowBlur = 5 + visualStrength * 8;
+  const shadowAlpha = (interaction.holdingCountersteer ? 0.32 : 0.16) + visualStrength * 0.38;
+  wheel.style.setProperty(
+    "--countersteer-shadow",
+    `drop-shadow(${shadowOffset.toFixed(2)}px 0 ${shadowBlur.toFixed(2)}px rgb(242 198 109 / ${shadowAlpha.toFixed(3)}))`
+  );
+
+  const travel = interaction.holdingCountersteer
+    ? 1.1 + interaction.counterIntensity * 1.9
+    : interaction.counterIntensity * 1.2;
+  return Number((interaction.counterDirection * travel).toFixed(2));
+}
+
+function resetCountersteerVisual() {
+  gameTelemetry.classList.remove("countersteering");
+  wheel.classList.remove("holding-countersteer");
+  wheel.style.setProperty("--countersteer-shadow", "drop-shadow(0 0 0 rgb(242 198 109 / 0))");
 }
 
 function setPedal(element: HTMLElement, assetImage: HTMLElement, value: number) {

@@ -1,7 +1,5 @@
 import { clamp01 } from "./dom";
 
-export type SteeringInteractionState = "free" | "cornering" | "loaded" | "countersteer" | "correcting";
-
 export type SteeringPhysics = {
   steering: number;
   demand: number;
@@ -12,17 +10,11 @@ export type SteeringPhysics = {
 };
 
 export type SteeringInteraction = {
-  state: SteeringInteractionState;
-  label: string;
   score: number;
-};
-
-const labels: Record<SteeringInteractionState, string> = {
-  free: "Free",
-  cornering: "Cornering",
-  loaded: "Loaded",
-  countersteer: "Countersteer",
-  correcting: "Correcting"
+  countersteering: boolean;
+  holdingCountersteer: boolean;
+  counterDirection: -1 | 0 | 1;
+  counterIntensity: number;
 };
 
 export class SteeringInteractionTracker {
@@ -31,6 +23,7 @@ export class SteeringInteractionTracker {
   private activity = 0;
   private yawCorrelation = 0;
   private calibrationWeight = 0;
+  private countersteerDuration = 0;
 
   update(sample: SteeringPhysics): SteeringInteraction {
     const demand = clamp01(sample.demand);
@@ -70,21 +63,28 @@ export class SteeringInteractionTracker {
       && this.activity >= 0.14
       && Math.sign(steeringVelocity) === -Math.sign(alignedYaw);
 
-    let state: SteeringInteractionState;
-    if (activelyCorrecting) state = "correcting";
-    else if (countersteering) state = "countersteer";
-    else if (demand >= 0.3) state = "loaded";
-    else if (demand >= 0.07) state = "cornering";
-    else state = "free";
+    this.countersteerDuration = countersteering
+      ? Math.min(1, this.countersteerDuration + elapsed)
+      : 0;
+    const holdingCountersteer = countersteering
+      && this.countersteerDuration >= 0.18
+      && rawActivity <= 0.08;
 
     const slipDemand = clamp01(Math.abs(sample.slipAngle) / 14);
+    const yawDemand = clamp01(Math.abs(alignedYaw) / 0.8);
     const correctionBoost = activelyCorrecting ? this.activity * 0.12 : 0;
     const score = clamp01(demand * 0.86 + slipDemand * 0.10 + correctionBoost);
+    const counterIntensity = countersteering
+      ? clamp01(demand * 0.58 + slipDemand * 0.30 + yawDemand * 0.12)
+      : 0;
+    const counterDirection = countersteering
+      ? Math.sign(sample.steering) as -1 | 1
+      : 0;
 
     this.lastSteering = sample.steering;
     this.lastTimestamp = sampleTime;
 
-    return { state, label: labels[state], score };
+    return { score, countersteering, holdingCountersteer, counterDirection, counterIntensity };
   }
 
   reset() {
@@ -93,5 +93,6 @@ export class SteeringInteractionTracker {
     this.activity = 0;
     this.yawCorrelation = 0;
     this.calibrationWeight = 0;
+    this.countersteerDuration = 0;
   }
 }

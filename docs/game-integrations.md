@@ -31,10 +31,12 @@ completion only after a telemetry packet arrives during a stage.
 ### Derived steering interaction
 
 When DiRT telemetry is available, the overlay learns steering/yaw sign polarity
-during low-slip grip driving. It then reports `Free`, `Cornering`, `Loaded`,
-`Countersteer`, or `Correcting` in one pill. Demand comes primarily from vehicle
-physics; wheel motion only boosts an active correction. This cannot distinguish
-motor movement from the driver's hands and must not be labelled force feedback.
+during low-slip grip driving. One `LOAD` pill shows demand from vehicle physics.
+During a slide, holding the wheel opposite the calibrated yaw direction adds a
+directional amber tension glow and a subtle deflection to the wheel image. The
+effect remains visible while the wheel angle is steady because slip and yaw are
+still active. It cannot distinguish motor movement from the driver's hands and
+must not be labelled force feedback.
 
 If automatic setup is unavailable, close the game and edit:
 
