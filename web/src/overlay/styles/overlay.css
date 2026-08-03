@@ -170,10 +170,6 @@ body {
   left: 116px;
   top: 57px;
   width: 188px;
-  display: grid;
-  grid-template-columns: 62px 1fr 30px;
-  align-items: center;
-  gap: 6px;
   padding: 5px 7px;
   border-radius: 5px;
   background: color-mix(in srgb, var(--surface) 88%, #000);
@@ -183,6 +179,31 @@ body {
   font-variant-numeric: tabular-nums;
   text-transform: uppercase;
 }
+
+.telemetry-row {
+  display: grid;
+  grid-template-columns: 62px 1fr 30px;
+  align-items: center;
+  gap: 6px;
+  min-height: 13px;
+}
+
+.interaction-row {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.interaction-row output:first-child {
+  color: color-mix(in srgb, var(--foreground) 62%, transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.interaction-row[data-state="countersteer"] output:first-child,
+.interaction-row[data-state="high-load"] output:first-child { color: #f2d08a; }
+.interaction-row[data-state="correction"] output:first-child { color: color-mix(in srgb, var(--brake) 64%, var(--foreground)); }
 
 .game-telemetry i {
   display: block;
@@ -201,6 +222,11 @@ body {
   background: var(--accent);
   transition: transform 80ms ease-out;
 }
+
+.interaction-row b { background: color-mix(in srgb, var(--accent) 76%, var(--foreground)); }
+.interaction-row[data-state="countersteer"] b,
+.interaction-row[data-state="high-load"] b { background: #f2c66d; }
+.interaction-row[data-state="correction"] b { background: color-mix(in srgb, var(--brake) 74%, var(--foreground)); }
 
 .game-telemetry output { color: var(--foreground); text-align: right; }
 

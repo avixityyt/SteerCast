@@ -1,5 +1,6 @@
 import type { InputFrame, OverlayElement, OverlayProfile } from "../shared/types";
 import { clamp01, isImageAvailable, required } from "./dom";
+import { SteeringInteractionTracker } from "./steeringInteraction";
 import "./styles/overlay.css";
 
 const profileId = document.body.dataset.profile ?? "default";
@@ -17,6 +18,10 @@ const steeringValue = required<HTMLOutputElement>("steering-value");
 const gameTelemetry = required<HTMLElement>("game-telemetry");
 const gameTelemetryFill = required<HTMLElement>("game-telemetry-fill");
 const gameTelemetryValue = required<HTMLOutputElement>("game-telemetry-value");
+const steeringInteraction = required<HTMLElement>("steering-interaction");
+const steeringInteractionLabel = required<HTMLOutputElement>("steering-interaction-label");
+const steeringInteractionFill = required<HTMLElement>("steering-interaction-fill");
+const steeringInteractionValue = required<HTMLOutputElement>("steering-interaction-value");
 const gear = required<HTMLOutputElement>("gear");
 const shiftStick = required<HTMLElement>("shift-stick");
 const handbrakeLever = required<HTMLElement>("handbrake-lever");
@@ -38,6 +43,7 @@ let pendingFrame: InputFrame | null = null;
 let renderedSequence = -1;
 let lastMessageAt = 0;
 let reconnectDelay = 250;
+const interactionTracker = new SteeringInteractionTracker();
 
 void initialize();
 void initializeAssetPack();
@@ -99,6 +105,7 @@ function renderLoop() {
 
 function applyFrame(frame: InputFrame) {
   if (!frame.connected) {
+    interactionTracker.reset();
     setConnection("Wheel disconnected", true);
     return;
   }
@@ -108,7 +115,7 @@ function applyFrame(frame: InputFrame) {
   wheel.style.transform = `rotate(${degrees}deg)`;
   steeringIndicator.style.transform = `translate3d(${frame.steering * 84}px, 0, 0)`;
   steeringValue.value = `${Math.round(degrees)} degrees`;
-  setGameTelemetry(frame.gameTelemetryStrength, frame.gameTelemetryKind);
+  setGameTelemetry(frame);
   setPedal(pedalChannels.clutch, pedalImages.clutch, frame.clutch);
   setPedal(pedalChannels.brake, pedalImages.brake, frame.brake);
   setPedal(pedalChannels.throttle, pedalImages.throttle, frame.throttle);
@@ -123,14 +130,28 @@ function applyFrame(frame: InputFrame) {
   }
 }
 
-function setGameTelemetry(value: number | null | undefined, kind: string | null | undefined) {
-  const visible = kind === "derived-telemetry" && Number.isFinite(value);
+function setGameTelemetry(frame: InputFrame) {
+  const visible = frame.gameTelemetryKind === "derived-telemetry" && Number.isFinite(frame.gameTelemetryStrength);
   gameTelemetry.hidden = !visible;
-  if (!visible) return;
+  if (!visible) {
+    interactionTracker.reset();
+    return;
+  }
 
-  const normalized = clamp01(value ?? 0);
+  const normalized = clamp01(frame.gameTelemetryStrength ?? 0);
   gameTelemetryFill.style.transform = `scaleX(${normalized})`;
   gameTelemetryValue.value = `${Math.round(normalized * 100)}%`;
+
+  const interaction = interactionTracker.update(
+    frame.steering,
+    normalized,
+    frame.gameTelemetryDirection ?? 0,
+    frame.timestamp
+  );
+  steeringInteraction.dataset.state = interaction.state;
+  steeringInteractionLabel.value = interaction.label;
+  steeringInteractionFill.style.transform = `scaleX(${interaction.score})`;
+  steeringInteractionValue.value = `${Math.round(interaction.score * 100)}%`;
 }
 
 function setPedal(element: HTMLElement, assetImage: HTMLElement, value: number) {

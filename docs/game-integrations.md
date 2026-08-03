@@ -27,6 +27,15 @@ UDP attributes, replaces the file atomically, and enables the local listener.
 The user must close the game before running automatic setup. The UI confirms
 completion only after a telemetry packet arrives during a stage.
 
+### Derived steering interaction
+
+When DiRT telemetry is available, the overlay combines physical wheel movement
+with derived vehicle load and lateral-load direction. It reports `Quiet`,
+`Turning`, `High load`, `Countersteer`, or `Correction`, plus a short-decay
+activity percentage. Holding the wheel at an angle therefore settles near zero
+activity, while quick movement under load rises. This cannot distinguish motor
+movement from the driver's hands and must not be labelled force feedback.
+
 If automatic setup is unavailable, close the game and edit:
 
 `Documents\My Games\DiRT Rally 2.0\hardwaresettings\hardware_settings_config.xml`

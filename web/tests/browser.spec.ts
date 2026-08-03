@@ -188,6 +188,16 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
   await expect(page.locator(".feedback-readout")).toHaveCount(0);
   await expect(page.locator("#game-telemetry")).toBeVisible();
   await expect(page.locator("#game-telemetry-value")).toHaveText("68%");
+  await expect(page.locator("#steering-interaction-label")).toHaveText("Countersteer");
+
+  const turningFrame = { ...frame, sequence: 2, timestamp: frame.timestamp + 50, steering: 0.7 };
+  await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), turningFrame);
+  await expect(page.locator("#steering-interaction-value")).not.toHaveText("0%");
+  await expect(page.locator("#steering-interaction")).toHaveAttribute("data-state", "countersteer");
+
+  const correctionFrame = { ...turningFrame, sequence: 3, timestamp: frame.timestamp + 100, steering: 0.9 };
+  await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), correctionFrame);
+  await expect(page.locator("#steering-interaction-label")).toHaveText("Correction");
 });
 
 test("setup remains usable at a narrow desktop width", async ({ page }) => {

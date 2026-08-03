@@ -17,9 +17,16 @@
           <span id="steering-indicator" class="steering-indicator"></span>
         </div>
         <div id="game-telemetry" class="game-telemetry" hidden aria-label="Derived vehicle load telemetry">
-          <span>Derived load</span>
-          <i><b id="game-telemetry-fill"></b></i>
-          <output id="game-telemetry-value">0%</output>
+          <div class="telemetry-row load-row">
+            <span>Derived load</span>
+            <i><b id="game-telemetry-fill"></b></i>
+            <output id="game-telemetry-value">0%</output>
+          </div>
+          <div id="steering-interaction" class="telemetry-row interaction-row" data-state="quiet" aria-live="polite">
+            <output id="steering-interaction-label" aria-label="Derived steering interaction">Quiet</output>
+            <i><b id="steering-interaction-fill"></b></i>
+            <output id="steering-interaction-value" aria-label="Steering activity">0%</output>
+          </div>
         </div>
         <div id="wheel" class="wheel" aria-label="Steering wheel">
           <div id="wheel-image-stack" class="wheel-image-stack" aria-hidden="true">
