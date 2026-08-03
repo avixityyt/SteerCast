@@ -18,8 +18,9 @@ be labelled force feedback.
 ## DiRT Rally 2.0
 
 The first adapter listens on `127.0.0.1:20777` only while enabled. It consumes
-the game's `extradata="3"` UDP packet and derives vehicle load from lateral G,
-longitudinal G, and suspension motion. It does not represent wheel resistance.
+the game's `extradata="3"` UDP packet and derives steering demand from vehicle
+slip angle, yaw rate, speed, G-load, and suspension motion. It does not
+represent wheel resistance.
 
 The Games panel detects the normal and VR configuration files. Its Quick setup
 action creates a one-time `.steercast-backup` beside each file, changes only the
@@ -29,12 +30,11 @@ completion only after a telemetry packet arrives during a stage.
 
 ### Derived steering interaction
 
-When DiRT telemetry is available, the overlay combines physical wheel movement
-with derived vehicle load and lateral-load direction. It reports `Quiet`,
-`Turning`, `High load`, `Countersteer`, or `Correction`, plus a short-decay
-activity percentage. Holding the wheel at an angle therefore settles near zero
-activity, while quick movement under load rises. This cannot distinguish motor
-movement from the driver's hands and must not be labelled force feedback.
+When DiRT telemetry is available, the overlay learns steering/yaw sign polarity
+during low-slip grip driving. It then reports `Free`, `Cornering`, `Loaded`,
+`Countersteer`, or `Correcting` in one pill. Demand comes primarily from vehicle
+physics; wheel motion only boosts an active correction. This cannot distinguish
+motor movement from the driver's hands and must not be labelled force feedback.
 
 If automatic setup is unavailable, close the game and edit:
 

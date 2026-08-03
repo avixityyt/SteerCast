@@ -85,6 +85,9 @@ export type InputFrame = {
   buttons: number;
   gameTelemetryStrength?: number | null;
   gameTelemetryDirection?: number;
+  gameTelemetrySpeed?: number;
+  gameTelemetrySlipAngle?: number;
+  gameTelemetryYawRate?: number;
   gameTelemetryKind?: string | null;
   gameTelemetrySource?: string | null;
 };
@@ -128,6 +131,9 @@ export type GameTelemetryReading = {
   active: boolean;
   strength: number;
   direction: number;
+  speed: number;
+  slipAngle: number;
+  yawRate: number;
   timestamp: number;
   port: number;
   status: string;

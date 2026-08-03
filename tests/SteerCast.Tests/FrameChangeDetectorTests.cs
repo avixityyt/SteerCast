@@ -30,6 +30,8 @@ public sealed class FrameChangeDetectorTests
         Assert.True(detector.HasChanged(initial));
         Assert.False(detector.HasChanged(initial with { GameTelemetryStrength = 0.205 }));
         Assert.True(detector.HasChanged(initial with { GameTelemetryStrength = 0.3 }));
+        Assert.True(detector.HasChanged(initial with { GameTelemetryYawRate = 0.2 }));
+        Assert.True(detector.HasChanged(initial with { GameTelemetrySlipAngle = 3 }));
         Assert.True(detector.HasChanged(initial with { GameTelemetryStrength = null }));
     }
 

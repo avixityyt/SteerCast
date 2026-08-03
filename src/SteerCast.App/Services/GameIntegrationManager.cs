@@ -11,9 +11,9 @@ public sealed class GameIntegrationManager : IDisposable
             DirtRally2TelemetryAdapter.GameId,
             "DiRT Rally 2.0",
             "derived-telemetry",
-            "Derived vehicle load",
+            "Derived steering demand",
             DirtRally2TelemetryAdapter.DefaultPort,
-            "Uses the game's local UDP output. It estimates vehicle load; it does not read wheel force feedback.")
+            "Uses vehicle slip, yaw, speed, and G-load. It estimates steering demand; it does not read wheel force feedback.")
     ];
 
     private readonly object _sync = new();
@@ -74,6 +74,9 @@ public sealed class GameIntegrationManager : IDisposable
                 {
                     GameTelemetryStrength = reading.Strength,
                     GameTelemetryDirection = reading.Direction,
+                    GameTelemetrySpeed = reading.Speed,
+                    GameTelemetrySlipAngle = reading.SlipAngle,
+                    GameTelemetryYawRate = reading.YawRate,
                     GameTelemetryKind = reading.SignalKind,
                     GameTelemetrySource = reading.Source
                 };
@@ -136,6 +139,9 @@ public sealed class GameIntegrationManager : IDisposable
         SupportedGames[0].SignalLabel,
         false,
         false,
+        0,
+        0,
+        0,
         0,
         0,
         0,

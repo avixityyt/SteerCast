@@ -671,7 +671,7 @@ export default function App() {
                         <span aria-hidden="true">{gameIntegration.telemetry.available ? "✓" : "3"}</span>
                         <div>
                           <strong>Start a stage</strong>
-                          <p>{gameIntegration.telemetry.available ? "Connection confirmed. Derived load is ready for the overlay." : gameIntegration.settings.enabled ? "Open the game and begin a stage. SteerCast will confirm the first packet automatically." : "Enable the listener, then open the game and begin a stage."}</p>
+                          <p>{gameIntegration.telemetry.available ? "Connection confirmed. Derived steering demand is ready for the overlay." : gameIntegration.settings.enabled ? "Open the game and begin a stage. SteerCast will confirm the first packet automatically." : "Enable the listener, then open the game and begin a stage."}</p>
                         </div>
                       </li>
                     </ol>
@@ -722,9 +722,9 @@ export default function App() {
                       <h3 id="signal-heading">Signal</h3>
                       <span class="quality-badge">Not FFB</span>
                     </div>
-                    <strong class="signal-name">{selectedGame?.signalLabel ?? "Derived vehicle load"}</strong>
+                    <strong class="signal-name">{selectedGame?.signalLabel ?? "Derived steering demand"}</strong>
                     <p>{selectedGame?.summary}</p>
-                    <div class="integration-meter" role="progressbar" aria-label="Derived vehicle load" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(gameIntegration.telemetry.strength * 100)}>
+                    <div class="integration-meter" role="progressbar" aria-label="Derived steering demand" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(gameIntegration.telemetry.strength * 100)}>
                       <span style={{ transform: `scaleX(${gameIntegration.telemetry.strength})` }}></span>
                     </div>
                     <output class="integration-value">{Math.round(gameIntegration.telemetry.strength * 100)}%</output>

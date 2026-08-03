@@ -16,9 +16,6 @@ const pedalImages = {
 const shifterImage = required<HTMLImageElement>("shifter-image");
 const steeringValue = required<HTMLOutputElement>("steering-value");
 const gameTelemetry = required<HTMLElement>("game-telemetry");
-const gameTelemetryFill = required<HTMLElement>("game-telemetry-fill");
-const gameTelemetryValue = required<HTMLOutputElement>("game-telemetry-value");
-const steeringInteraction = required<HTMLElement>("steering-interaction");
 const steeringInteractionLabel = required<HTMLOutputElement>("steering-interaction-label");
 const steeringInteractionFill = required<HTMLElement>("steering-interaction-fill");
 const steeringInteractionValue = required<HTMLOutputElement>("steering-interaction-value");
@@ -138,17 +135,15 @@ function setGameTelemetry(frame: InputFrame) {
     return;
   }
 
-  const normalized = clamp01(frame.gameTelemetryStrength ?? 0);
-  gameTelemetryFill.style.transform = `scaleX(${normalized})`;
-  gameTelemetryValue.value = `${Math.round(normalized * 100)}%`;
-
-  const interaction = interactionTracker.update(
-    frame.steering,
-    normalized,
-    frame.gameTelemetryDirection ?? 0,
-    frame.timestamp
-  );
-  steeringInteraction.dataset.state = interaction.state;
+  const interaction = interactionTracker.update({
+    steering: frame.steering,
+    demand: clamp01(frame.gameTelemetryStrength ?? 0),
+    speed: frame.gameTelemetrySpeed ?? 0,
+    slipAngle: frame.gameTelemetrySlipAngle ?? 0,
+    yawRate: frame.gameTelemetryYawRate ?? 0,
+    timestamp: frame.timestamp
+  });
+  gameTelemetry.dataset.state = interaction.state;
   steeringInteractionLabel.value = interaction.label;
   steeringInteractionFill.style.transform = `scaleX(${interaction.score})`;
   steeringInteractionValue.value = `${Math.round(interaction.score * 100)}%`;

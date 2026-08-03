@@ -27,6 +27,9 @@ public sealed record GameTelemetryReading(
     bool Active,
     double Strength,
     int Direction,
+    double Speed,
+    double SlipAngle,
+    double YawRate,
     long Timestamp,
     int Port,
     string Status);

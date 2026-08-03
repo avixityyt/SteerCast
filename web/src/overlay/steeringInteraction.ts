@@ -1,6 +1,15 @@
 import { clamp01 } from "./dom";
 
-export type SteeringInteractionState = "quiet" | "turning" | "high-load" | "countersteer" | "correction";
+export type SteeringInteractionState = "free" | "cornering" | "loaded" | "countersteer" | "correcting";
+
+export type SteeringPhysics = {
+  steering: number;
+  demand: number;
+  speed: number;
+  slipAngle: number;
+  yawRate: number;
+  timestamp: number;
+};
 
 export type SteeringInteraction = {
   state: SteeringInteractionState;
@@ -9,64 +18,80 @@ export type SteeringInteraction = {
 };
 
 const labels: Record<SteeringInteractionState, string> = {
-  quiet: "Quiet",
-  turning: "Turning",
-  "high-load": "High load",
+  free: "Free",
+  cornering: "Cornering",
+  loaded: "Loaded",
   countersteer: "Countersteer",
-  correction: "Correction"
+  correcting: "Correcting"
 };
 
 export class SteeringInteractionTracker {
   private lastSteering: number | null = null;
   private lastTimestamp = 0;
-  private lastVelocity = 0;
   private activity = 0;
-  private correctionUntil = 0;
+  private yawCorrelation = 0;
+  private calibrationWeight = 0;
 
-  update(steering: number, load: number, loadDirection: number, timestamp: number): SteeringInteraction {
-    const normalizedLoad = clamp01(load);
-    const sampleTime = Number.isFinite(timestamp) && timestamp > 0 ? timestamp : performance.now();
+  update(sample: SteeringPhysics): SteeringInteraction {
+    const demand = clamp01(sample.demand);
+    const sampleTime = Number.isFinite(sample.timestamp) && sample.timestamp > 0
+      ? sample.timestamp
+      : performance.now();
     const elapsed = this.lastTimestamp > 0
       ? Math.min(0.25, Math.max(0.008, (sampleTime - this.lastTimestamp) / 1000))
       : 1 / 60;
-    const velocity = this.lastSteering === null ? 0 : (steering - this.lastSteering) / elapsed;
-    const rawActivity = clamp01(Math.abs(velocity) / 1.6);
-    const decay = Math.exp(-elapsed / 0.32);
-    this.activity = Math.max(rawActivity, this.activity * decay);
+    const steeringVelocity = this.lastSteering === null
+      ? 0
+      : (sample.steering - this.lastSteering) / elapsed;
+    const rawActivity = clamp01(Math.abs(steeringVelocity) / 1.8);
+    this.activity = Math.max(rawActivity, this.activity * Math.exp(-elapsed / 0.24));
 
-    const reversed = Math.abs(velocity) > 0.35
-      && Math.abs(this.lastVelocity) > 0.35
-      && Math.sign(velocity) !== Math.sign(this.lastVelocity);
-    if (reversed && normalizedLoad >= 0.08) this.correctionUntil = sampleTime + 280;
+    // Learn whether this wheel/game pair reports steering and yaw with matching signs.
+    // Only use low-slip grip driving, never a slide, for calibration.
+    if (sample.speed >= 5
+      && Math.abs(sample.steering) >= 0.04
+      && Math.abs(sample.yawRate) >= 0.04
+      && Math.abs(sample.slipAngle) <= 4) {
+      const weight = Math.min(0.08, elapsed) * Math.min(1, Math.abs(sample.yawRate) / 0.3);
+      this.yawCorrelation += Math.sign(sample.steering * sample.yawRate) * weight;
+      this.calibrationWeight = Math.min(2, this.calibrationWeight + weight);
+    }
 
-    const countersteering = normalizedLoad >= 0.08
-      && Math.abs(steering) >= 0.05
-      && loadDirection !== 0
-      && Math.sign(steering) !== Math.sign(loadDirection);
+    const yawPolarity = this.yawCorrelation < 0 ? -1 : 1;
+    const alignedYaw = sample.yawRate * yawPolarity;
+    const calibrated = this.calibrationWeight >= 0.18;
+    const sliding = sample.speed >= 5 && Math.abs(sample.slipAngle) >= 2.2 && Math.abs(alignedYaw) >= 0.06;
+    const countersteering = calibrated
+      && sliding
+      && Math.abs(sample.steering) >= 0.045
+      && Math.sign(sample.steering) !== Math.sign(alignedYaw);
+    const activelyCorrecting = calibrated
+      && sliding
+      && this.activity >= 0.14
+      && Math.sign(steeringVelocity) === -Math.sign(alignedYaw);
 
     let state: SteeringInteractionState;
-    if (sampleTime < this.correctionUntil) state = "correction";
+    if (activelyCorrecting) state = "correcting";
     else if (countersteering) state = "countersteer";
-    else if (normalizedLoad >= 0.28 && this.activity >= 0.2) state = "high-load";
-    else if (this.activity >= 0.08) state = "turning";
-    else state = "quiet";
+    else if (demand >= 0.3) state = "loaded";
+    else if (demand >= 0.07) state = "cornering";
+    else state = "free";
 
-    this.lastSteering = steering;
+    const slipDemand = clamp01(Math.abs(sample.slipAngle) / 14);
+    const correctionBoost = activelyCorrecting ? this.activity * 0.12 : 0;
+    const score = clamp01(demand * 0.86 + slipDemand * 0.10 + correctionBoost);
+
+    this.lastSteering = sample.steering;
     this.lastTimestamp = sampleTime;
-    this.lastVelocity = velocity;
 
-    return {
-      state,
-      label: labels[state],
-      score: clamp01(this.activity * (0.72 + normalizedLoad * 0.28))
-    };
+    return { state, label: labels[state], score };
   }
 
   reset() {
     this.lastSteering = null;
     this.lastTimestamp = 0;
-    this.lastVelocity = 0;
     this.activity = 0;
-    this.correctionUntil = 0;
+    this.yawCorrelation = 0;
+    this.calibrationWeight = 0;
   }
 }

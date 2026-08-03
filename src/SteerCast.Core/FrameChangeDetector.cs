@@ -23,6 +23,9 @@ public sealed class FrameChangeDetector(double analogThreshold = 0.001)
             || Changed(previous.Handbrake, next.Handbrake)
             || Changed(previous.GameTelemetryStrength, next.GameTelemetryStrength)
             || previous.GameTelemetryDirection != next.GameTelemetryDirection
+            || Changed(previous.GameTelemetrySpeed, next.GameTelemetrySpeed)
+            || Changed(previous.GameTelemetrySlipAngle, next.GameTelemetrySlipAngle)
+            || Changed(previous.GameTelemetryYawRate, next.GameTelemetryYawRate)
             || previous.GameTelemetryKind != next.GameTelemetryKind
             || previous.GameTelemetrySource != next.GameTelemetrySource;
     }

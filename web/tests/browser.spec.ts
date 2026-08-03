@@ -23,7 +23,7 @@ test("setup loads the saved profile and OBS URL", async ({ page }) => {
   await expect(page.getByText(/less than two minutes/i)).toBeVisible();
   await expect(page.getByLabel("Enable game integration")).toBeAttached();
   await expect(page.getByText("Not FFB", { exact: true })).toBeVisible();
-  await expect(page.getByRole("progressbar", { name: "Derived vehicle load" })).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "Derived steering demand" })).toBeVisible();
   await page.getByRole("button", { name: "Layout" }).click();
   await expect(page.getByRole("button", { name: "Reset module positions" })).toBeVisible();
   await page.getByRole("button", { name: "Appearance" }).click();
@@ -164,7 +164,10 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
     gear: 0,
     buttons: 0,
     gameTelemetryStrength: 0.68,
-    gameTelemetryDirection: -1,
+    gameTelemetryDirection: 1,
+    gameTelemetrySpeed: 24,
+    gameTelemetrySlipAngle: 1,
+    gameTelemetryYawRate: 0.3,
     gameTelemetryKind: "derived-telemetry",
     gameTelemetrySource: "dirt-rally-2-udp"
   };
@@ -187,17 +190,30 @@ test("overlay pedal visuals use physical input semantics", async ({ page }) => {
   expect(throttleRail!.height).toBeGreaterThan(throttleRail!.width * 5);
   await expect(page.locator(".feedback-readout")).toHaveCount(0);
   await expect(page.locator("#game-telemetry")).toBeVisible();
-  await expect(page.locator("#game-telemetry-value")).toHaveText("68%");
-  await expect(page.locator("#steering-interaction-label")).toHaveText("Countersteer");
-
-  const turningFrame = { ...frame, sequence: 2, timestamp: frame.timestamp + 50, steering: 0.7 };
-  await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), turningFrame);
+  await expect(page.locator("#game-telemetry")).toHaveAttribute("data-state", "loaded");
   await expect(page.locator("#steering-interaction-value")).not.toHaveText("0%");
-  await expect(page.locator("#steering-interaction")).toHaveAttribute("data-state", "countersteer");
 
-  const correctionFrame = { ...turningFrame, sequence: 3, timestamp: frame.timestamp + 100, steering: 0.9 };
+  for (let index = 2; index <= 14; index += 1) {
+    const calibrationFrame = { ...frame, sequence: index, timestamp: frame.timestamp + index * 20 };
+    await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), calibrationFrame);
+    await page.waitForTimeout(20);
+  }
+
+  const correctionFrame = {
+    ...frame,
+    sequence: 15,
+    timestamp: frame.timestamp + 300,
+    steering: -0.4,
+    gameTelemetrySlipAngle: 8,
+    gameTelemetryYawRate: 0.5
+  };
   await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), correctionFrame);
-  await expect(page.locator("#steering-interaction-label")).toHaveText("Correction");
+  await expect(page.locator("#steering-interaction-label")).toHaveText("Correcting");
+
+  const heldCountersteerFrame = { ...correctionFrame, sequence: 16, timestamp: frame.timestamp + 550 };
+  await page.evaluate((value) => (window as unknown as { __sendSteerCastFrame(frame: unknown): void }).__sendSteerCastFrame(value), heldCountersteerFrame);
+  await expect(page.locator("#steering-interaction-label")).toHaveText("Countersteer");
+  await expect(page.locator("#game-telemetry")).toHaveAttribute("data-state", "countersteer");
 });
 
 test("setup remains usable at a narrow desktop width", async ({ page }) => {

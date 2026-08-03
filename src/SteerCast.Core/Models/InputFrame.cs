@@ -15,6 +15,9 @@ public sealed record InputFrame
     public ulong Buttons { get; init; }
     public double? GameTelemetryStrength { get; init; }
     public int GameTelemetryDirection { get; init; }
+    public double GameTelemetrySpeed { get; init; }
+    public double GameTelemetrySlipAngle { get; init; }
+    public double GameTelemetryYawRate { get; init; }
     public string? GameTelemetryKind { get; init; }
     public string? GameTelemetrySource { get; init; }
 }
